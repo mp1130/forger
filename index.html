@@ -507,7 +507,7 @@ let DAY_TYPES = P.dayTypes, LIFT_ORDER = ['liftA','lowerA','liftB','lowerB'];
 let DAY_META = P.dayMeta, PROGRAM = P.program, SWGROUPS = P.swGroups;
 let WARMUP_ITEMS = P.warmup, QUICK_DEFAULT = P.quick, MAIN_LIFTS = P.mainLifts;
 
-const PROFILE_KEY = 'forge_who';
+const PROFILE_KEY = 'forge_who:'+(typeof location!=='undefined' ? location.pathname.replace(/\/index\.html$/,'') : '/');
 const DEFAULT_WHO = 'forger';   // '' = ask on first launch; 'forger' on her copy of the site
 function activeProfileId(){ try{ return localStorage.getItem(PROFILE_KEY) || ''; }catch(e){ return ''; } }
 function applyProfile(id){
@@ -4831,11 +4831,11 @@ function switchProfile(id){
 }
 (function(){
   let who = activeProfileId();
+  if(!who && DEFAULT_WHO) who = DEFAULT_WHO;
   if(!who){
     // someone already using the single-profile build is Michael — keep his data, skip the chooser
     try{ if(localStorage.getItem('forge_v1')) who='forge'; }catch(e){}
   }
-  if(!who && DEFAULT_WHO) who = DEFAULT_WHO;
   if(who && PROFILES[who]){ bootProfile(who); render(); }
   else { applyProfile('forge'); S = defaults(); UI.view='choose'; render(); }
 })();
