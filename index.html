@@ -3423,7 +3423,7 @@ function tilesHTML(fit, W, H){
   for(let tx=tx0; tx<=tx1; tx++) for(let ty=ty0; ty<=ty1; ty++){
     if(ty<0||ty>=n) continue;
     const wx=((tx%n)+n)%n, L=(tx*size-fit.ox)/W*100, T=(ty*size-fit.oy)/H*100;
-    h+='<img class="maptile" alt="" draggable="false" loading="lazy" src="https://tile.openstreetmap.org/'+zt+'/'+wx+'/'+ty+'.png" style="left:'+L.toFixed(3)+'%;top:'+T.toFixed(3)+'%;width:'+(size/W*100).toFixed(3)+'%;height:'+(size/H*100).toFixed(3)+'%">';
+    h+='<img class="maptile" alt="" draggable="false" referrerpolicy="origin" src="https://tile.openstreetmap.org/'+zt+'/'+wx+'/'+ty+'.png" style="left:'+L.toFixed(3)+'%;top:'+T.toFixed(3)+'%;width:'+(size/W*100).toFixed(3)+'%;height:'+(size/H*100).toFixed(3)+'%">';
   }
   return '<div class="maptiles">'+h+'</div><span class="mapattr">© OpenStreetMap</span>';
 }
