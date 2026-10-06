@@ -4668,7 +4668,8 @@ function stretchSay(){
   const st = stretchCur(); if(!st) return;
   const side = st.sides ? (ST.side? ' Second side.':' First side.') : '';
   const hh = holdFor(ST.list[ST.i], ST.kind), len = hh>=120 ? Math.round(hh/60)+' minutes' : hh+' seconds';
-  say(st.n+' · '+len+(side?' ·'+side:'')+' — '+st.cue, true, ST.side ? 'switch' : (st.dyn ? 'next' : 'hold'));
+  const own = !ST.side && VOICE.urls['st:'+ST.list[ST.i]];
+  say(st.n+' · '+len+(side?' ·'+side:'')+' — '+st.cue, true, own ? 'st:'+ST.list[ST.i] : (ST.side ? 'switch' : (st.dyn ? 'next' : 'hold')));
 }
 function stretchTick(reset){
   if(ST.timer){ clearInterval(ST.timer); ST.timer=null; }
@@ -4870,8 +4871,8 @@ const VOICE = {urls:{}, queue:[], playing:null, log:[], rec:null, recKey:null, c
 /* which built-in clips answer each cue when nobody has recorded that line */
 const KMAP = {go:['ready','set','go'], open:['ready','set','go'], resume:['go'], done:['@fin'], pickup:['@pick'], easeoff:['timeover'],
   next:['ready'], ten:['n10'], ahead:['correct'], ontarget:['correct'], behind:['hurry'], hold:['hold'], pr:['pr'], levelup:['levelup'], final:['final']};
-function kvoiceOn(){ const c=coachCfg(); return (c.kvoice||(P.id==='forger'?'b':'a'))!=='off'; }
-function kclip(k){ const c=coachCfg(), v=c.kvoice||(P.id==='forger'?'b':'a'); if(v==='off') return null;
+function kvoiceOn(){ return (coachCfg().kvoice||'off')!=='off'; }
+function kclip(k){ const c=coachCfg(), v=c.kvoice||'off'; if(v==='off') return null;
   if(k==='@fin') k=pick(['fin1','fin2','fin3','fin4']); if(k==='@pick') k=pick(['gogogo','powerup']);
   return (KVOICE[v]||KVOICE.a)[k]||KVOICE.a[k]||null; }
 /* decode once, then schedule clips back to back on the audio clock */
@@ -4910,7 +4911,7 @@ async function vloadAll(){
     await new Promise(res => {
       const t = db.transaction('clips','readonly'), st = t.objectStore('clips'), c = st.openCursor();
       c.onsuccess = () => { const cur = c.result; if(!cur){ res(); return; }
-        const [pid, k] = String(cur.key).split(':'); if(pid===P.id && cur.value) VOICE.urls[k] = URL.createObjectURL(cur.value); cur.continue(); };
+        const ks = String(cur.key), i = ks.indexOf(':'), pid = ks.slice(0,i), k = ks.slice(i+1); if(pid===P.id && cur.value) VOICE.urls[k] = URL.createObjectURL(cur.value); cur.continue(); };
       c.onerror = () => res();
     });
   }catch(e){}
@@ -4980,7 +4981,7 @@ async function voiceExport(){
   const out = {forge_voice:1, from:P.id, clips:{}};
   const db = await vdb();
   const list = await new Promise(res=>{ const arr=[]; const c=db.transaction('clips','readonly').objectStore('clips').openCursor();
-    c.onsuccess=()=>{ const cur=c.result; if(!cur){ res(arr); return; } if(String(cur.key).startsWith(P.id+':')) arr.push([String(cur.key).split(':')[1], cur.value]); cur.continue(); }; c.onerror=()=>res(arr); });
+    c.onsuccess=()=>{ const cur=c.result; if(!cur){ res(arr); return; } const ks=String(cur.key); if(ks.startsWith(P.id+':')) arr.push([ks.slice(P.id.length+1), cur.value]); cur.continue(); }; c.onerror=()=>res(arr); });
   for(const [k,b] of list){ out.clips[k] = await new Promise(res=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.readAsDataURL(b); }); }
   const blob = new Blob([JSON.stringify(out)], {type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = P.name.toLowerCase()+'-coach-voice.json'; a.setAttribute('download', a.download);
@@ -4990,25 +4991,39 @@ async function voiceExport(){
 async function voiceImport(file){
   try{
     const o = JSON.parse(await file.text()); if(!o || !o.clips) throw 0;
-    let n=0; for(const [k,d] of Object.entries(o.clips)){ if(!CUES.find(q=>q.k===k)) continue; const b = await (await fetch(d)).blob(); await vput(k,b); n++; }
+    let n=0; const valid=allCues(); for(const [k,d] of Object.entries(o.clips)){ if(!valid.find(q=>q.k===k)) continue; const b = await (await fetch(d)).blob(); await vput(k,b); n++; }
     await vloadAll(); render(true); toast(n+' recordings added');
   }catch(e){ toast('That file isn\u2019t a coach voice pack'); }
 }
 
+/* one coaching line per exercise and stretch, read by a real person */
+function moveCues(){
+  const ex = [], seen = {};
+  for(const k of P.liftOrder) for(const sl of slotList(k)) if(!seen[sl.id] && EXDB[sl.id]){ seen[sl.id]=1;
+    const E=EXDB[sl.id]; ex.push({k:'ex:'+sl.id, g:'Your exercises', line:E.n+'. '+(E.cues&&E.cues[0]||'')}); }
+  const st = []; const sseen = {};
+  for(const k of P.liftOrder) for(const id of warmupFor(k).concat(cooldownFor(k))) if(!sseen[id] && STRETCHDB[id]){ sseen[id]=1;
+    st.push({k:'st:'+id, g:'Your warm-ups and stretches', line:STRETCHDB[id].n+'. '+STRETCHDB[id].cue}); }
+  return ex.concat(st);
+}
+function allCues(){ return CUES.concat(moveCues()); }
 function rVoice(){
-  const groups = [...new Set(CUES.map(q=>q.g))];
-  const done = CUES.filter(q=>VOICE.urls[q.k]).length;
+  const ALLC = allCues();
+  const groups = [...new Set(ALLC.map(q=>q.g))];
+  const done = ALLC.filter(q=>VOICE.urls[q.k]).length;
   return '<div class="row mb10"><button class="btn small ghost" data-a="nav" data-v="settings">&#8249; Settings</button></div>'+
-    '<div class="pagehead"><div><div class="klabel">'+esc(P.name)+'</div><div class="disp h1">Coach voice</div></div><span class="chip '+(done===CUES.length?'goodc':'dimc')+' num">'+done+' / '+CUES.length+'</span></div>'+
+    '<div class="pagehead"><div><div class="klabel">'+esc(P.name)+'</div><div class="disp h1">Coach voice</div></div><span class="chip '+(done===ALLC.length?'goodc':'dimc')+' num">'+done+' / '+ALLC.length+'</span></div>'+
     '<div class="card acc flat"><div class="fine" style="color:var(--text)">A real person reads each line once — you, your partner, a friend. Read it like you mean it. These recordings play during workouts, runs and stretches. Paces and splits show big on screen, so nobody has to read numbers. Lines you haven\u2019t recorded show on screen with a soft chime. No computer voice is ever used.</div>'+
-      '<div class="steplab mt12">Built-in voice for countdowns and calls</div>'+
-      '<div class="seg mt6">'+[['a','Voice A'],['b','Voice B'],['off','Off']].map(([v,l])=>'<button class="'+((coachCfg().kvoice||(P.id==='forger'?'b':'a'))===v?'on':'')+'" data-a="kv-set" data-v="'+v+'">'+l+'</button>').join('')+'</div>'+
+      '<div class="steplab mt12">Game-announcer countdowns (optional)</div>'+
+      '<div class="seg mt6">'+[['off','Off'],['a','Announcer A'],['b','Announcer B']].map(([v,l])=>'<button class="'+((coachCfg().kvoice||'off')===v?'on':'')+'" data-a="kv-set" data-v="'+v+'">'+l+'</button>').join('')+'</div>'+
       '<div class="row mt6" style="gap:6px;flex-wrap:wrap"><button class="chip" data-a="kv-try" data-v="go">▶ Ready, set, go</button><button class="chip" data-a="kv-try" data-v="final">▶ Final round</button><button class="chip" data-a="kv-try" data-v="done">▶ Finish</button></div>'+
       '<div class="fine mt6">Recorded voice clips from Kenney\u2019s Voiceover Pack (kenney.nl), public domain. Your own recordings below always play instead when you have them.</div>'+
       '<div class="grid2 mt12"><button class="btn" data-a="v-export">Send this voice</button><button class="btn" data-a="v-import">Add a voice file</button></div>'+
       '<div class="fine mt6">To record for someone else\u2019s phone: switch to their program in Settings, record here, tap Send this voice, and text them the file. They tap Add a voice file.</div></div>'+
     groups.map(g=>'<div class="card"><span class="klabel">'+esc(g)+'</span>'+
-      CUES.filter(q=>q.g===g).map(q=>{
+      (g==='Your exercises' ? '<div class="fine mt6">Plays when that exercise comes up in your workout. Read the name, then the cue, like you\u2019re standing next to her.</div>' :
+       g==='Your warm-ups and stretches' ? '<div class="fine mt6">Plays when that move starts in the warm-up, cool-down or stretch player.</div>' : '')+
+      ALLC.filter(q=>q.g===g).map(q=>{
         const has = !!VOICE.urls[q.k], live = VOICE.recKey===q.k;
         return '<div class="vrow'+(live?' live':'')+'"><div class="vline">'+esc(q.line)+'</div><div class="vbtns">'+
           '<button class="chip '+(live?'badc':'accc')+'" data-a="v-rec" data-k="'+q.k+'">'+(live?'■ Stop':(has?'● Redo':'● Record'))+'</button>'+
@@ -5027,7 +5042,7 @@ document.addEventListener('click', function(e){
   else if(a==='v-export'){ voiceExport(); }
   else if(a==='v-import'){ const f=$('#voicefile'); if(f){ f.value=''; f.click(); } }
 });
-Object.assign(window,{VOICE,CUES,say,playClip,KVOICE,KMAP,kclip,playKeys});
+Object.assign(window,{VOICE,CUES,say,playClip,KVOICE,KMAP,kclip,playKeys,moveCues,allCues});
 document.addEventListener('change', function(e){ if(e.target && e.target.id==='voicefile' && e.target.files && e.target.files[0]) voiceImport(e.target.files[0]); });
 
 </script>
@@ -5386,15 +5401,19 @@ document.addEventListener('click', function(e){
       if(ex.editIdx!=null){ ex.sets[ex.editIdx]=entry; ex.editIdx=null; }
       else{
         ex.sets.push(entry);
-        if(!warm && workingSets(ex).length>=ex.targetSets) ex.complete=true;
+        if(!warm && workingSets(ex).length>=ex.targetSets){ ex.complete=true; ex.justDone=true; }
       }
       ex.draft={weight:entry.weight, reps:entry.reps, rpe:'', warm:false, band:entry.band};
       save(); render(true);
       startRest(ex.rest, EXDB[ex.exerciseId].n);
+      if(ex.justDone){ delete ex.justDone; const nx=S.active.exercises.find(e=>!e.complete);
+        if(nx && VOICE.urls['ex:'+nx.exerciseId]){ shutUp(); playClip('ex:'+nx.exerciseId); showBubble('Next up · '+EXDB[nx.exerciseId].n); } }
       break; }
     case 'pl-st-done': {
       const a=S.active; if(!a) break;
-      const k=D.part+'Done'; a[k]=a[k]||{}; a[k][D.id]=!a[k][D.id]; save(); render(true); break; }
+      const k=D.part+'Done'; a[k]=a[k]||{}; a[k][D.id]=!a[k][D.id]; save(); render(true);
+      if(D.part==='warm' && (a.warm||[]).every(id=>a.warmDone[id])){ const nx=a.exercises.find(e=>!e.complete); if(nx && VOICE.urls['ex:'+nx.exerciseId]){ playClip('ex:'+nx.exerciseId); showBubble('First up · '+EXDB[nx.exerciseId].n); } }
+      break; }
     case 'pl-st-play': {
       const a=S.active; if(!a) break;
       const part=D.part, id=D.id;
