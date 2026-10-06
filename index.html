@@ -35,14 +35,15 @@
   --shadow:0 10px 24px -14px rgba(20,30,45,.25);
 }
 [data-prof="forger"]{
-  --bg:#17111c; --panel:#201826; --panel2:#2a2032; --line:#3a2d45;
-  --text:#f4eef5; --dim:#a493ad; --accent:#ff4d86; --accent-ink:#1f0712;
-  --good:#4fd49a; --info:#8ea6ff;
+  --bg:#0d0a0e; --panel:#171219; --panel2:#211a24; --line:#2f2533;
+  --text:#fcf6f8; --dim:#b8a7b6; --accent:#ff6b8f; --accent-ink:#ffffff;
+  --rose2:#ffa58f; --champ:#e9c9a1; --good:#5fd6a4; --info:#9fb4ff;
+  --shadow:0 18px 40px -22px rgba(0,0,0,.8); --fig-hl:#ff8fab;
 }
 [data-prof="forger"][data-theme="light"]{
-  --bg:#f8f2f6; --panel:#ffffff; --panel2:#f6ecf2; --line:#e8d6e1;
-  --text:#2a1f2e; --dim:#7a6a80; --accent:#d8266a; --accent-ink:#fff3f7;
-  --good:#1a9d6a; --info:#3d64d6;
+  --bg:#fbf6f3; --panel:#ffffff; --panel2:#f7eef0; --line:#eedfe3;
+  --text:#251a22; --dim:#8a7883; --accent:#e2507a; --accent-ink:#ffffff;
+  --rose2:#f28a72; --champ:#a8794a; --good:#1f9e6c; --fig-hl:#e2507a; --shadow:0 18px 40px -26px rgba(80,30,50,.35);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{height:100%}
@@ -332,6 +333,7 @@ body.notab #toast{bottom:calc(30px + env(safe-area-inset-bottom))}
 <div id="toast" hidden></div>
 <input type="file" id="importfile" accept=".json,application/json" hidden>
 <input type="file" id="exphoto" accept="image/*" hidden>
+<input type="file" id="voicefile" accept=".json,application/json" hidden>
 
 <script>
 'use strict';
@@ -1759,6 +1761,7 @@ function render(keepScroll){
   else if(UI.view==='run') html=rRun();
   else if(UI.view==='rundetail') html=rRunDetail();
   else if(UI.view==='choose') html=rChoose();
+  else if(UI.view==='voice') html=rVoice();
   else if(UI.view==='stretch') html=rStretch();
   else if(UI.view==='stretchlib') html=rStretchLib();
   paint(html, keepScroll);
@@ -1859,6 +1862,8 @@ function rHome(){
       '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.2 5.2l2.1 2.1M16.7 16.7l2.1 2.1M18.8 5.2l-2.1 2.1M7.3 16.7l-2.1 2.1"/>'+
       '</svg></button>'+
   '</div>'+
+  (P.id==='forger' ? '<div class="row" style="gap:8px;margin:0 2px 12px"><span class="streak">🔥 '+weekStreak().weeks+'-week streak</span><span class="chip dimc num">'+weekStreak().thisWeek+' of 3 this week</span></div>' : '')+
+  studioRow(t, sug)+
   togetherCard(t, sug)+
   (S.tipsSeen ? '' :
     '<div class="card tipcard"><div class="between"><span class="klabel">How '+esc(P.name)+' works</span><button class="chip dimc" data-a="tips-hide">Got it</button></div>'+
@@ -2082,6 +2087,12 @@ function weightChartSVG(){
 }
 
 function stretchMonthCount(){ const m=todayS().slice(0,7); return (S.stretches||[]).filter(x=>x.date.slice(0,7)===m).length; }
+function muscleWeekCard(){
+  const h = weeklyMuscleHeat();
+  return '<div class="card mmcard"><div class="between"><span class="klabel">Muscles this week</span><span class="fine">last 7 days</span></div>'+
+    (h.total ? muscleMapSVG({heat:h.heat})+'<div class="fine mt6" style="text-align:center">Brighter means more working sets. Gaps show what the week missed.</div>'
+             : '<div class="fine mt10">Log a workout and the muscles you trained light up here.</div>')+'</div>';
+}
 function rProgress(){
   const t = todayS();
   const thisAvg = weekAvgWeight(t);
@@ -2113,6 +2124,7 @@ function rProgress(){
   }).join('') : '<div class="emptystate"><div class="disp big">No sessions yet</div><div class="sub mt6">Your history lands here after the first workout.</div><button class="btn primary mt14" data-a="nav" data-v="home">Go start one</button></div>';
 
   return '<div class="pagehead"><div><div class="klabel">Progress</div><div class="disp h1">The Receipts</div></div></div>'+
+  muscleWeekCard()+
   '<div class="card"><div class="between"><span class="klabel">Bodyweight</span><button class="chip" data-a="wt-open">+ Log</button></div>'+
     '<div class="row mt10" style="align-items:baseline;gap:14px">'+
       '<div><div class="big num">'+(thisAvg!=null? trimW(thisAvg):'—')+'</div><div class="fine">this week avg (lb)</div></div>'+
@@ -2152,6 +2164,7 @@ function rExercise(){
     (b? '<span class="chip goodc num">Best '+esc(bestLabel(id))+'</span>':'')+
     (l? '<span class="chip dimc num">Last '+esc(setShort(id,l.sets[0]))+'</span>':'')+'</div>'+
   figBlock(id)+
+  musclesCard(E.mus||[], 'Muscles worked')+
   sec('Setup &amp; equipment','<div class="mt6">'+esc(E.setup)+'</div>')+
   sec('How to do it','<ol>'+E.steps.map(s=>'<li>'+esc(s)+'</li>').join('')+'</ol>')+
   sec('What good form looks like', list(E.cues,'cuel'))+
@@ -2179,6 +2192,9 @@ function rSettings(){
   (P.id==='forger' ? '<div class="card"><div class="between"><span class="klabel">Breastfeeding</span>'+
     '<button class="chip'+(pf.breastfeeding?' goodc':' dimc')+'" data-a="bf-toggle">'+(pf.breastfeeding?'Yes — targets raised':'No')+'</button></div>'+
     '<div class="fine mt10">While feeding, the app adds about 400 kcal and 15 g protein to every day and bumps water to 3.5 L. Do not run a deficit while breastfeeding — supply and recovery come first.</div></div>' : '')+
+  '<div class="card"><div class="between"><span class="klabel">Coach voice</span><span class="chip dimc num">'+CUES.filter(q=>VOICE.urls[q.k]).length+' / '+CUES.length+'</span></div>'+
+    '<div class="fine mt10">Real recorded voices only. Record the lines yourself or have someone record them for you.</div>'+
+    '<button class="btn mt10" data-a="nav" data-v="voice">Record coach lines</button></div>'+
   '<div class="card"><span class="klabel">Training partner</span>'+
     '<input class="field mt10" placeholder="'+esc(P.partner)+'" maxlength="24" value="'+esc(pf.partnerName||'')+'" data-ch="profile.partnerName">'+
     '<div class="fine mt10">Shown on the Training together and Eating together cards.</div></div>'+
@@ -2455,31 +2471,45 @@ function pickRoot(A, B, cfg){
   return 'hip';
 }
 function lerpAng(a, b, t){ let d = ((b-a+540)%360)-180; return a + d*t; }
+const nrmA = a => ((a%360)+540)%360-180;
+/* every bone turns relative to the bone it hangs from, so a head can only nod
+   and a foot can only point and flex — no more swinging round the wrong way */
 function tweenPose(A, B, t, cfg){
   if(t<=0) return A; if(t>=1) return B;
   const root = pickRoot(A, B, cfg), {order, par} = skelOrder(root);
   const P = {front:A.front, top:A.top};
   P[root] = [A[root][0]+(B[root][0]-A[root][0])*t, A[root][1]+(B[root][1]-A[root][1])*t];
-  const seg = {};
+  const angA = {}, angB = {}, rel = {}, len = {};
+  const baseNow = j => par[j]!=null ? pang(P[par[j]], P[j]) : 0;
   for(const [p,c] of order){
+    const ta = pang(A[p],A[c]), tb = pang(B[p],B[c]); angA[c]=ta; angB[c]=tb;
+    const ra = nrmA(ta - (par[p]!=null ? angA[p] : 0)), rb = nrmA(tb - (par[p]!=null ? angB[p] : 0));
     const la = pdist(A[p],A[c]), lb = pdist(B[p],B[c]);
-    const tA = pang(A[p],A[c]), tB = pang(B[p],B[c]);
-    let s;
-    if(A.front && Math.abs(((tB-tA+540)%360)-180) > 160){
-      const vx = (A[c][0]-A[p][0])*(1-t) + (B[c][0]-B[p][0])*t, vy = (A[c][1]-A[p][1])*(1-t) + (B[c][1]-B[p][1])*t;
-      s = {L: Math.hypot(vx,vy), th: Math.atan2(vy,vx)/D2R};
-    } else s = {L: la+(lb-la)*t, th: lerpAng(tA, tB, t)};
-    seg[c] = s; P[c] = pol(P[p], s.L, s.th);
+    if(A.front && Math.abs(nrmA(rb-ra)) > 160){
+      const va = pol([0,0], la, ra), vb = pol([0,0], lb, rb), v = [va[0]+(vb[0]-va[0])*t, va[1]+(vb[1]-va[1])*t];
+      len[c] = Math.hypot(v[0],v[1]); rel[c] = Math.atan2(v[1],v[0])/D2R;
+    } else { len[c] = la+(lb-la)*t; rel[c] = ra + nrmA(rb-ra)*t; }
+    P[c] = pol(P[p], len[c], baseNow(p) + rel[c]);
   }
   const kids = {}; for(const [p,c] of order) (kids[p]=kids[p]||[]).push(c);
-  const refk = (j, skip) => { for(const c of (kids[j]||[])) if(c!==skip){ P[c] = pol(P[j], seg[c].L, seg[c].th); refk(c); } };
+  const refk = (j, skip) => { for(const c of (kids[j]||[])) if(c!==skip){ P[c] = pol(P[j], len[c], baseNow(j) + rel[c]); refk(c); } };
   const pinned = j => pdist(A[j], B[j]) < 0.8;
   for(const [p,c] of order){
     if(c===root || !pinned(c) || pinned(p) || !par[p]) continue;
-    if(c==='md'||c==='sA'||c==='sB'||c==='pA'||c==='pB') continue;
-    const g = par[p], L1 = seg[p].L, L2 = seg[c].L;
-    const cr = (X) => { const v1=[X[c][0]-X[g][0], X[c][1]-X[g][1]], v2=[X[p][0]-X[g][0], X[p][1]-X[g][1]]; return v1[0]*v2[1]-v1[1]*v2[0]; };
-    let side = Math.sign(cr(A)) || Math.sign(cr(B)) || 1;
+    if(c==='md'||c==='sA'||c==='sB'||c==='pA'||c==='pB'||p==='sA'||p==='sB'||p==='pA'||p==='pB') continue;
+    const g = par[p], L1 = len[p], L2 = len[c];
+    const sinOf = X => { const v1=[X[c][0]-X[g][0], X[c][1]-X[g][1]], v2=[X[p][0]-X[g][0], X[p][1]-X[g][1]];
+      return (v1[0]*v2[1]-v1[1]*v2[0])/((Math.hypot(v1[0],v1[1])*Math.hypot(v2[0],v2[1]))||1); };
+    const sa = sinOf(A), sb = sinOf(B);
+    let side;
+    if(Math.abs(sa) > 0.06) side = Math.sign(sa);
+    else if(Math.abs(sb) > 0.06) side = Math.sign(sb);
+    else if(!A.front && (c[0]==='h' || c[0]==='a')){
+      /* straight at both ends: bend the way a real elbow or knee bends */
+      const m1 = ik2(P[g], A[c], L1, L2, 1), m2 = ik2(P[g], A[c], L1, L2, -1);
+      const r = m => nrmA(pang(m, A[c]) - pang(P[g], m));
+      side = c[0]==='h' ? (r(m1) <= r(m2) ? 1 : -1) : (r(m1) >= r(m2) ? 1 : -1);
+    } else side = 1;
     P[p] = ik2(P[g], A[c], L1, L2, side);
     P[c] = pol(P[p], L2, pang(P[p], A[c]));
     refk(p, c); refk(c);
@@ -2659,6 +2689,12 @@ const mixP = (p, q, k) => [p[0]+(q[0]-p[0])*k, p[1]+(q[1]-p[1])*k];
 function R(P, limb, target, pref, endDeg){
   const a = reach(P, limb, target, 1, endDeg), b = reach(P, limb, target, -1, endDeg);
   const mj = (limb[0]==='h' ? 'e' : 'k') + limb[1];
+  if(!P.front){
+    const n = x => ((x%360)+540)%360-180, L = limb[1];
+    const relOf = Q => limb[0]==='h' ? n(pang(Q['e'+L],Q['h'+L]) - pang(Q['s'+L],Q['e'+L])) : n(pang(Q['k'+L],Q['a'+L]) - pang(Q['p'+L],Q['k'+L]));
+    const okA = limb[0]==='h' ? relOf(a) <= 8 : relOf(a) >= -8, okB = limb[0]==='h' ? relOf(b) <= 8 : relOf(b) >= -8;
+    if(okA && !okB) return a; if(okB && !okA) return b;
+  }
   const pick = {up:a[mj][1]<b[mj][1], down:a[mj][1]>b[mj][1], fwd:a[mj][0]>b[mj][0], back:a[mj][0]<b[mj][0],
                 out:Math.abs(a[mj][0]-62)>Math.abs(b[mj][0]-62), in:Math.abs(a[mj][0]-62)<Math.abs(b[mj][0]-62)}[pref];
   return pick ? a : b;
@@ -2669,7 +2705,7 @@ const RR = (P, list) => list.reduce((Q, x) => R(Q, x[0], x[1], x[2], x[3]), P);
 const STAND = SD({});
 const STAND_DB = SD({a:[94,91]});
 const LIE_T = 180;                                           // supine: hip → neck points left
-const SUP = (o) => pose(Object.assign({x:66, y:104, t:LIE_T, h:180, a:[4,2], l:[0,0,0], ground:false}, o));
+const SUP = (o) => pose(Object.assign({x:66, y:104, t:LIE_T, h:180, a:[4,2], l:[0,0,-70], ground:false}, o));
 const PLANK_A = (() => { const P = SD({t:-18.8, h:-14, a:[90,90], l:[161.2,161.2,95]}); return P; })();
 const FOURS = (o) => SD(Object.assign({t:-13.9, h:-8, a:[90,90], l:[90,180,180]}, o));
 
@@ -2808,9 +2844,9 @@ function bridgePair(o){
 
 /* single-arm row: chair in front, far hand braced */
 (() => {
-  let A = SD({x:52, y:62, t:-14, h:-8, a:[92,90], l:[100,84,6], r:[74,98,6]});
+  let A = SD({x:52, y:62, t:-14, h:-8, a:[92,90], l:[100,106,6], r:[74,98,6]});
   A = R(A, 'hB', [97, 81], 'fwd');
-  let B = SD({x:52, y:62, t:-14, h:-8, a:[202,96], l:[100,84,6], r:[74,98,6]});
+  let B = SD({x:52, y:62, t:-14, h:-8, a:[202,96], l:[100,106,6], r:[74,98,6]});
   B = pinTo(B, A, 'tA'); B = R(B, 'hB', A.hB, 'fwd');
   EXFIG.db_row = {label:'Side', gear:['chairR'], la:'Arm long, back flat', lb:'Elbow drives to the hip', a:A, b:B, db:['hA'], hl:['back','biA'], arrow:[[24,72,24,52]]};
   let FA = FV({ts:0.6, hs:0.35, h:-90, a:[88,90], l:[94,90,72,0.95,1], r:[86,90,108,0.95,1]});
@@ -2973,7 +3009,7 @@ function bridgePair(o){
 /* bird dog: all fours facing right */
 (() => {
   const A = FOURS({});
-  let B = FOURS({a:[-2,-2], r:[178,178,180], ground:false}); B = pinTo(B, A, 'kA'); B = R(B,'hB',A.hB,'fwd');
+  let B = FOURS({a:[-2,-2], r:[178,178,100], ground:false}); B = pinTo(B, A, 'kA'); B = R(B,'hB',A.hB,'fwd');
   EXFIG.bird_dog = {label:'Side', gear:['floor'], la:'Hands under shoulders, knees under hips', lb:'Reach long — opposite arm and leg', a:A, b:B, root:'kA',
     hl:['glutes','lowback','shA']};
   const tv = o => pose(Object.assign({front:1, top:1, x:62, y:54, ts:1, h:-90, ground:false, a:[90,90,0.3,0.3], b:[90,90,0.3,0.3], l:[90,90,90,0.3,0.6], r:[90,90,90,0.3,0.6]}, o));
@@ -3054,7 +3090,7 @@ const CY = (o) => Object.assign({anim:'cycle'}, o);
   LB = Object.assign({}, LB, {aA:[k[0]-24,105.6], tA:[k[0]-32,105.6], aB:[k[0]-24,105.6], tB:[k[0]-32,105.6]});
   STFIG.st_lat = H({label:'Side', gear:['chairR'], la:'Kneel, hands on the seat', lb:'Sit back, let the chest sink', a:LA, b:LB, root:'kA', hl:['lats']});
   const TA = FOURS({});
-  let TB = FOURS({t:6, h:30, a:[118,174], ground:false}); TB = pinTo(TB, TA, 'kA'); TB = R(TB,'hB',TA.hB,'fwd');
+  let TB = FOURS({t:6, h:30, a:[150,150], ground:false}); TB = pinTo(TB, TA, 'kA'); TB = R(TB,'hB',TA.hB,'fwd');
   STFIG.st_thoracic = CY({label:'Side', gear:['floor'], la:'On all fours', lb:'Thread the arm under, shoulder to the floor', a:TA, b:TB, root:'kA', hl:['back']});
   const catA = FOURS({c:44, h:70}); let cowB = FOURS({c:-30, h:-40, ground:false}); cowB = pinTo(cowB, catA, 'kA');
   cowB = R(cowB,'hA',catA.hA,'fwd'); cowB = R(cowB,'hB',catA.hB,'fwd');
@@ -3068,7 +3104,7 @@ const CY = (o) => Object.assign({anim:'cycle'}, o);
   HB = RR(HB, [['hA',mixP(HB.kA,HB.aA,0.55),'up'],['hB',mixP(HB.kA,HB.aA,0.5),'up']]);
   STFIG.st_hamstring = H({label:'Side', gear:['chairR'], la:'Heel on the seat, leg long', lb:'Hinge toward the toes, flat back', a:HA, b:HB, root:'tB', hl:['hamA']});
   const seat = (t,h) => { let P = SD({x:24, y:80, t:t, h:h, r:[0,90,6], l:[18,170,180,0.85], ground:false});
-    P = R(P,'aA',[P.kB[0]-2, P.kB[1]-3],'up',180); P = RR(P, [['hA',[P.kA[0]-2,P.kA[1]-2],'down'],['hB',[P.kB[0]-6,P.kB[1]-2],'down']]); return P; };
+    P = R(P,'aA',[P.kB[0]-2, P.kB[1]-3],'up',24); P = RR(P, [['hA',[P.kA[0]-2,P.kA[1]-2],'down'],['hB',[P.kB[0]-6,P.kB[1]-2],'down']]); return P; };
   STFIG.st_fig4 = H({label:'Side', gear:['chairL'], la:'Ankle over the opposite knee', lb:'Hinge forward, back flat', a:seat(-90,-88), b:seat(-46,-36), root:'tB', hl:['glutes']});
   let WA = SD({x:86, a:[-4,-2], b:[-4,-2]}); WA = shiftP(WA, 118-WA.hA[0], 0);
   let WB = SD({x:76, y:62, t:-66, h:-60, ground:false}); WB = R(WB,'aA',[52,105.6],'down',6); WB = R(WB,'aB',[90,105.6],'up',6);
@@ -3094,7 +3130,7 @@ const CY = (o) => Object.assign({anim:'cycle'}, o);
     P = RR(P, [['hA',[P.aA[0]+2,P.aA[1]-2],'out'],['hB',[P.aB[0]-2,P.aB[1]-2],'out']]); return P; };
   STFIG.st_butterfly = H({label:'Front', gear:['floor'], la:'Soles together, sit tall', lb:'Knees drop, lean in a little', a:bf(98,1,-12), b:bf(98,0.86,8), hl:['innerA','innerB']});
   const KA = SUP({x:66, l:[0,0,-80], r:[0,0,-80]});
-  let KB = SUP({x:66, l:[-150,40,-60], r:[0,0,-80]}); KB = RR(KB, [['hA',mixP(KB.kA,KB.aA,0.3),'up'],['hB',mixP(KB.kA,KB.aA,0.4),'up']]);
+  let KB = SUP({x:66, l:[-150,0,-60], r:[0,0,-80]}); KB = RR(KB, [['hA',mixP(KB.kA,KB.aA,0.3),'up'],['hB',mixP(KB.kA,KB.aA,0.4),'up']]);
   STFIG.st_kneechest = H({label:'Side', gear:['floor'], la:'Lie flat', lb:'Hug one knee to the chest', a:KA, b:KB, root:'nk', hl:['glutes','lowback']});
   let FFA = FV({x:80}); FFA = RR(FFA, [['hA',[115,40],'down']]);
   const FFB = R(FV({x:80, t:-82}), 'hA', [115,40], 'down');
@@ -3103,8 +3139,8 @@ const CY = (o) => Object.assign({anim:'cycle'}, o);
 
 /* dynamic warm-up moves */
 (() => {
-  const WA = SD({a:[112,96], b:[70,74], l:[66,100,-8], r:[114,86,26]});
-  let WB = SD({a:[70,74], b:[112,96], l:[114,86,26], r:[66,100,-8]});
+  const WA = SD({a:[112,96], b:[70,74], l:[66,100,-8], r:[114,122,40]});
+  let WB = SD({a:[70,74], b:[112,96], l:[114,122,40], r:[66,100,-8]});
   STFIG.dy_walk = CY({label:'Side', gear:['floor'], la:'Heel strikes', lb:'Arms swing opposite', a:WA, b:WB, root:'hip'});
   STFIG.dy_armcircle = CY({label:'Front', gear:['floor'], la:'Arms out at shoulder height', lb:'Small circles', a:FV({a:[-12,-10], b:[192,190]}), b:FV({a:[10,8], b:[170,172]}), hl:['shA','shB']});
   STFIG.dy_pullapart = {label:'Side', gear:['floor'], la:'Band out front, arms straight', lb:'Pull apart to the chest', a:SD({a:[-4,-2]}), b:SD({a:[-4,-2,0.3,0.3], b:[-4,-2,0.3,0.3]}), hl:['shA','back']};
@@ -3112,7 +3148,7 @@ const CY = (o) => Object.assign({anim:'cycle'}, o);
   { const t = SD({t:-37, h:-28, a:[90,90], l:[143,143,95], ground:false}); let q = pinTo(t, sc, 'tA'); q = R(q,'hA',sc.hA,'up'); q = R(q,'hB',sc.hB,'up'); scB = q; }
   STFIG.dy_scap = {label:'Side', gear:['chairR'], la:'Arms locked straight', lb:'Let the chest sink between the shoulders', a:sc, b:scB, hl:['back']};
   let LSa = SD({l:[46,60,-20], r:[90,90,6], ground:false}); LSa = pinTo(LSa, STAND, 'tB'); LSa = R(LSa,'hB',[93,44],'down');
-  let LSb = SD({l:[126,108,40], r:[90,90,6], ground:false}); LSb = pinTo(LSb, STAND, 'tB'); LSb = R(LSb,'hB',[93,44],'down');
+  let LSb = SD({l:[126,132,40], r:[90,90,6], ground:false}); LSb = pinTo(LSb, STAND, 'tB'); LSb = R(LSb,'hB',[93,44],'down');
   STFIG.dy_legswing = CY({label:'Side', gear:['poleR'], la:'Swing forward', lb:'Swing back, stay tall', a:LSa, b:LSb, root:'tB', hl:['hamA','hipA']});
   const hc = (dx, t) => { let P = FV({x:62+dx, t:t, ground:false}); P = pinTo(P, FV({}), 'aA');
     P = R(P,'aB',FV({}).aB,'out',108); P = RR(P, [['hA',[P.pA[0]+3,P.pA[1]-3],'out'],['hB',[P.pB[0]-3,P.pB[1]-3],'out']]); return P; };
@@ -3195,6 +3231,88 @@ function figCard(exId){
 }
 function figThumb(exId){
   return viewCfg(exId) ? figSVG(exId,{mode:'still',end:1,extra:'exthumb'}) : '';
+}
+
+/* =================== MUSCLE MAP ===================
+   Front and back body diagrams. Primary muscles light up full, secondary
+   ones half. The same regions drive the weekly heat map on Progress. */
+const MM_REG = (()=>{
+  const e = (cx,cy,rx,ry) => '<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+rx+'" ry="'+ry+'"/>';
+  const pair = (dx,cy,rx,ry,c) => e(c-dx,cy,rx,ry)+e(c+dx,cy,rx,ry);
+  const F = 60, K = 180;
+  return {
+    deltF:  pair(25,46,8,8,F),   chest: pair(10,54,11,8,F),  bicep: pair(29,67,5,12,F),
+    forearm:pair(33,110,4.5,15,F)+pair(33,110,4.5,15,K),
+    abs:    '<rect x="'+(F-8)+'" y="64" width="16" height="36" rx="4"/>',
+    oblique:pair(16,84,4.5,13,F), hipflex:pair(9,120,6,5,F), quad:pair(13,148,7.5,20,F),
+    adductor:pair(5,140,3,12,F),  shin:pair(13,194,4,15,F),
+    trap:   '<path d="M'+K+' 30 L'+(K+18)+' 44 L'+K+' 62 L'+(K-18)+' 44 Z"/>',
+    deltR:  pair(25,46,8,8,K),   lat: pair(13,72,9,16,K),    tricep: pair(29,67,5,12,K),
+    lowback:'<rect x="'+(K-9)+'" y="86" width="18" height="16" rx="5"/>',
+    glute:  pair(10,116,10,10,K), ham: pair(13,150,7,20,K),  calf: pair(13,190,5.5,14,K)
+  };
+})();
+const MM_MAP = [
+  [/front shoulder|front delt/i,['deltF']], [/rear delt/i,['deltR']], [/shoulder blade/i,['trap']], [/shoulder|delt/i,['deltF','deltR']],
+  [/chest/i,['chest']], [/tricep/i,['tricep']], [/bicep/i,['bicep']], [/forearm/i,['forearm']],
+  [/lat/i,['lat']], [/upper back/i,['trap','lat']], [/lower back|spine/i,['lowback']], [/\bback\b/i,['lat','trap']], [/trap|neck/i,['trap']],
+  [/oblique|side of the/i,['oblique']], [/core|abs/i,['abs']], [/glute|outer hip|it band/i,['glute']], [/hamstring/i,['ham']],
+  [/quad/i,['quad']], [/calf|calves|achilles|ankle/i,['calf']], [/hip flexor/i,['hipflex']], [/\bhips?\b/i,['hipflex','glute']],
+  [/inner thigh|groin|adductor/i,['adductor']], [/whole body/i,['quad','ham','glute','abs','chest','lat']]
+];
+function musRegions(names){
+  const out = [];
+  for(const nm of (names||[])) for(const [re, regs] of MM_MAP) if(re.test(nm)){ for(const r of regs) if(!out.includes(r)) out.push(r); break; }
+  return out;
+}
+function bodySil(cx){
+  const L = (x1,y1,x2,y2,w) => '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke-width="'+w+'"/>';
+  return '<g class="mmbody"><circle cx="'+cx+'" cy="18" r="12"/>'+
+    '<path d="M'+(cx-24)+' 40 Q'+cx+' 33 '+(cx+24)+' 40 L'+(cx+20)+' 100 Q'+cx+' 108 '+(cx-20)+' 100 Z"/>'+
+    '<path d="M'+(cx-20)+' 98 L'+(cx+20)+' 98 L'+(cx+22)+' 124 Q'+cx+' 131 '+(cx-22)+' 124 Z"/>'+
+    '<rect x="'+(cx-5)+'" y="27" width="10" height="10"/>'+
+    L(cx-26,44,cx-31,90,11)+L(cx-31,90,cx-34,132,9)+L(cx+26,44,cx+31,90,11)+L(cx+31,90,cx+34,132,9)+
+    L(cx-11,122,cx-13,172,17)+L(cx-13,172,cx-13,214,12)+L(cx+11,122,cx+13,172,17)+L(cx+13,172,cx+13,214,12)+
+    '<circle cx="'+(cx-34)+'" cy="139" r="5"/><circle cx="'+(cx+34)+'" cy="139" r="5"/>'+
+    '<ellipse cx="'+(cx-14)+'" cy="220" rx="7" ry="4"/><ellipse cx="'+(cx+14)+'" cy="220" rx="7" ry="4"/></g>';
+}
+/* heat: {region: 0..1}; or primary/secondary lists */
+function muscleMapSVG(o){
+  const heat = o.heat || {};
+  if(!o.heat){ for(const r of (o.secondary||[])) heat[r] = Math.max(heat[r]||0, 0.45); for(const r of (o.primary||[])) heat[r] = 1; }
+  let regs = '';
+  for(const k in MM_REG){
+    const v = heat[k]||0;
+    regs += '<g class="mmreg'+(v?' on':'')+'" style="'+(v?'fill-opacity:'+(0.25+0.75*v).toFixed(2):'')+'">'+MM_REG[k]+'</g>';
+  }
+  return '<svg class="mmsvg" viewBox="0 0 240 230" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'+
+    bodySil(60)+bodySil(180)+regs+
+    '<text x="60" y="229" text-anchor="middle" class="mmlbl">FRONT</text><text x="180" y="229" text-anchor="middle" class="mmlbl">BACK</text></svg>';
+}
+function musclesCard(names, title){
+  const regs = musRegions(names);
+  if(!regs.length) return '';
+  const prim = musRegions(names.slice(0,1)), sec = regs.filter(r=>!prim.includes(r));
+  return '<div class="card mmcard"><div class="between"><span class="klabel">'+esc(title||'Muscles worked')+'</span>'+
+      '<span class="mmleg"><i class="p"></i>Primary <i class="s"></i>Secondary</span></div>'+
+    muscleMapSVG({primary:prim, secondary:sec})+
+    '<div class="stchips" style="justify-content:center">'+names.map((m,i)=>'<span class="chip '+(i?'dimc':'goodc')+'">'+esc(m)+'</span>').join('')+'</div></div>';
+}
+/* sets per region over the last 7 days, scaled to the busiest region */
+function weeklyMuscleHeat(){
+  const since = fmtD(new Date(Date.now()-6*86400000)), tally = {};
+  for(const w of (S.workouts||[])){
+    if(w.date < since) continue;
+    for(const ex of (w.exercises||[])){
+      const E = EXDB[ex.exerciseId]; if(!E) continue;
+      const n = (ex.sets||[]).filter(s=>!s.warmup).length; if(!n) continue;
+      const regs = musRegions(E.mus||[]), prim = musRegions((E.mus||[]).slice(0,1));
+      for(const r of regs) tally[r] = (tally[r]||0) + n*(prim.includes(r)?1:0.5);
+    }
+  }
+  const mx = Math.max(0, ...Object.values(tally)); const heat = {};
+  if(mx) for(const r in tally) heat[r] = tally[r]/mx;
+  return {heat, total:Object.keys(tally).length};
 }
 
 /* ---------- your own photos ---------- */
@@ -3630,12 +3748,12 @@ function runBegin(){
 function runPause(){
   const r=S.runActive; if(!r||r.paused) return;
   r.accum = runElapsed(); r.paused=true;
-  stopWatch(); keepAwake(false); shutUp(); say('Paused.'); save(); render();
+  stopWatch(); keepAwake(false); shutUp(); say('Paused.', false, 'paused'); save(); render();
 }
 function runResume(){
   const r=S.runActive; if(!r||!r.paused) return;
   r.resumedAt=Date.now(); r.paused=false;
-  startWatch(); keepAwake(true); say('Back on.'); save(); render();
+  startWatch(); keepAwake(true); say('Back on.', false, 'resume'); save(); render();
 }
 function runFinish(){
   const r=S.runActive; if(!r) return;
@@ -3901,7 +4019,7 @@ document.addEventListener('click', function(e){
     case 'rr-reset':   { S.runReady={}; save(); render(true); break; }
     case 'coach-every':coachCfg().every=b.dataset.v; save(); render(true); break;
     case 'coach-style':{ coachCfg().style=b.dataset.v; save(); render(true);
-      if(b.dataset.v!=='off') say('Coach set.', true); break; }
+      if(b.dataset.v!=='off') say('Coach set.', true, 'go'); break; }
     case 'coach-tp': {
       const c=coachCfg(), dd=+b.dataset.d;
       if(dd===0) c.targetPace=0;
@@ -4021,18 +4139,7 @@ function coachCfg(){
   const c = S.settings.coach || (S.settings.coach = {on:true, every:'mile', targetPace:0, style:'coach'});
   return c;
 }
-function speechOK(){ return typeof window!=='undefined' && 'speechSynthesis' in window; }
-function say(txt, force){
-  const c = coachCfg();
-  if(!force && (!c.on || c.style==='off')) return;
-  if(!speechOK()) return;
-  try{
-    const u = new SpeechSynthesisUtterance(txt);
-    u.rate = 1.03; u.volume = 1;
-    window.speechSynthesis.speak(u);
-  }catch(e){}
-}
-function shutUp(){ try{ if(speechOK()) window.speechSynthesis.cancel(); }catch(e){} }
+
 
 /* speech reads "9 minutes 41 seconds" reliably; "9:41" it does not */
 function spokenTime(sec){
@@ -4066,7 +4173,7 @@ function coachTick(){
     const cur = r.phases[r.phaseIdx||0];
     const inPhase = sec - (r.phaseStart||0);
     const left = cur.sec - inPhase;
-    if(left<=10 && !r.cue.ten){ r.cue.ten=true; if(r.phaseIdx < r.phases.length-1) say('Ten seconds.'); }
+    if(left<=10 && !r.cue.ten){ r.cue.ten=true; if(r.phaseIdx < r.phases.length-1) say('Ten seconds.', false, 'ten'); }
     if(left<=0){
       r.phaseIdx = (r.phaseIdx||0)+1;
       r.phaseStart = sec;
@@ -4074,9 +4181,9 @@ function coachTick(){
       const nx = r.phases[r.phaseIdx];
       if(nx){
         const verb = nx.t==='hard' ? 'Pick it up. ' : nx.t==='easy' ? 'Ease off. ' : '';
-        say(verb + nx.l + '. ' + spokenTime(nx.sec) + '.');
+        say(verb + nx.l + ' · ' + fmtDur(nx.sec), false, nx.t==='hard'?'pickup':nx.t==='easy'?'easeoff':'next');
       }else{
-        say('Workout complete. Finish when you are ready.');
+        say('Workout complete. Finish when you are ready.', false, 'done');
         r.plan=null; r.phases=null;
       }
       save();
@@ -4093,12 +4200,14 @@ function coachTick(){
     const lastSplit = sp.length? sp[sp.length-1].sec : sec;
     const avg = sec/(m/MI);
     if(c.style==='brief'){
-      say(dist+(dist===1?' mile':' miles')+'. '+spokenPace(avg)+'.');
+      say(dist+(dist===1?' mile':' miles')+' · '+pace(sec,m)+' /mi avg', false, unit===0.5 && dist%1 ? 'halfmile' : 'mile');
     }else{
       let line = dist+(dist===1?' mile':' miles')+'. Last split '+spokenTime(lastSplit)+'. Average '+spokenPace(avg)+'.';
       line += targetDeltaLine(avg);
       if(done>=1){ const own=coachOwnLine(); if(own) line += ' '+own; else if(!r.cue.mid && done>=2){ r.cue.mid=true; line += ' '+pick(P.mids); } }
-      say(line);
+      say(line, false, unit===0.5 && dist%1 ? 'halfmile' : 'mile');
+      const tp=coachCfg().targetPace; if(tp){ const dd=Math.round(avg-tp); playClip(Math.abs(dd)<4?'ontarget':dd<0?'ahead':'behind'); }
+      if(done>=2 && c.style==='coach') motivate();
     }
     save();
   }
@@ -4109,7 +4218,7 @@ function coachTick(){
     if(mins > r.cue.min && sec>60){
       r.cue.min = mins;
       const avg = m>50 ? sec/(m/MI) : 0;
-      say(spokenTime(mins*300)+'. '+fmtMi(m)+' miles.'+(avg? ' Average '+spokenPace(avg)+'.':''));
+      say(fmtDur(mins*300)+' · '+fmtMi(m)+' mi'+(avg? ' · '+pace(sec,m)+' /mi avg':''), false, 'time');
       save();
     }
   }
@@ -4117,18 +4226,18 @@ function coachTick(){
 function coachStartLine(){
   const c = coachCfg();
   const r = S.runActive;
-  if(P.id==='forger' && !runReadyOK() && r && !r.plan) say('Reminder: the run-ready check is not finished. Keep this easy and stop at any symptom.', true);
+  if(P.id==='forger' && !runReadyOK() && r && !r.plan) say('Run-ready check isn\u2019t finished. Keep it easy, stop at any symptom.', true, 'careful');
   if(!c.on || c.style==='off') return;
   if(r && r.phases && r.phases.length){
     const first = r.phases[0];
-    say(planById(r.plan).name+'. First up, '+first.l+' for '+spokenTime(first.sec)+'. Go.');
-  }else if(c.style==='brief'){ say('Started.'); }
-  else { say(coachOwnLine() || pick(P.openers)); }
+    say(planById(r.plan).name+' · first up: '+first.l+' · '+fmtDur(first.sec), false, 'go');
+  }else if(c.style==='brief'){ say('Started.', false, 'go'); }
+  else { say(coachOwnLine() || pick(P.openers), false, 'open'); }
 }
 function coachFinishLine(sec, meters){
   const c=coachCfg();
   if(!c.on || c.style==='off') return;
-  say(pick(P.finishers)+' '+fmtMi(meters)+' miles in '+spokenTime(sec)+'. Average '+spokenPace(sec/(meters/MI))+'.');
+  say(pick(P.finishers)+' '+fmtMi(meters)+' mi · '+fmtDur(sec)+' · '+pace(sec,meters)+' /mi', false, 'done');
 }
 
 const D_ = b => b.dataset.id;
@@ -4188,7 +4297,7 @@ function rCoachCard(){
   const tp = c.targetPace;
   return '<div class="card mt12"><div class="between"><span class="klabel">Coach</span>'+
       '<button class="chip'+(c.on?' goodc':' dimc')+'" data-a="coach-on">'+(c.on?'On ✓':'Off')+'</button></div>'+
-    (speechOK()? '' : '<div class="fine mt10">This browser has no speech engine — cues will stay silent.</div>')+
+    '<button class="btn mt10" data-a="nav" data-v="voice">🎙 Coach voice · '+CUES.filter(q=>VOICE.urls[q.k]).length+' of '+CUES.length+' lines recorded</button>'+
     '<div class="steplab mt10">Talk to me every</div>'+
     '<div class="seg mt6">'+
       [['half','½ mile'],['mile','Mile'],['5min','5 min']].map(([v,l])=>
@@ -4236,6 +4345,66 @@ function rPhaseBar(r){
 /* ============ STRETCH ============ */
 .wordmark{display:block;background:none;border:0;padding:0;margin-bottom:2px;color:var(--dim);cursor:pointer;font:inherit;letter-spacing:inherit;text-transform:inherit;font-size:inherit;text-align:left}
 .phasebar2{display:flex;gap:6px;margin:0 0 12px}
+[data-prof="forger"] body{background:radial-gradient(1100px 520px at 90% -12%, rgba(255,107,143,.17), transparent 60%),
+  radial-gradient(900px 480px at -15% 8%, rgba(233,201,161,.08), transparent 60%), var(--bg);background-attachment:fixed}
+[data-prof="forger"] .disp{transform:none;letter-spacing:-.015em;font-weight:760}
+[data-prof="forger"] .h1{font-size:32px;line-height:1.05}
+[data-prof="forger"] .klabel{letter-spacing:.22em;font-weight:700}
+[data-prof="forger"] .wordmark{font-family:ui-serif,"New York","Iowan Old Style",Georgia,serif;letter-spacing:.34em;font-weight:600;color:var(--champ)!important;font-size:11px}
+[data-prof="forger"] .card{border-radius:22px;padding:17px;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0)),var(--panel)}
+[data-prof="forger"] .card.acc{border-color:rgba(255,107,143,.42);
+  background:radial-gradient(420px 210px at 100% 0%, rgba(255,107,143,.30), transparent 70%),
+             radial-gradient(360px 220px at 0% 100%, rgba(233,201,161,.14), transparent 70%), linear-gradient(160deg,#2a1524,#1a111c 62%)}
+[data-prof="forger"][data-theme="light"] .card.acc{background:radial-gradient(420px 210px at 100% 0%, rgba(226,80,122,.16), transparent 70%), linear-gradient(160deg,#fff,#fdf0f3)}
+[data-prof="forger"] .btn{border-radius:999px}
+[data-prof="forger"] .btn.primary{background:linear-gradient(95deg,var(--accent),var(--rose2));border:0;color:#fff;letter-spacing:.06em;text-transform:uppercase;
+  font-size:13.5px;font-weight:800;box-shadow:0 14px 30px -12px rgba(255,107,143,.7)}
+[data-prof="forger"] .chip{border-radius:999px}
+[data-prof="forger"] .stat,[data-prof="forger"] .rs,[data-prof="forger"] .wcell,[data-prof="forger"] .mapbox{border-radius:18px}
+[data-prof="forger"] #tabbar{background:rgba(13,10,14,.74);backdrop-filter:saturate(1.4) blur(18px);-webkit-backdrop-filter:saturate(1.4) blur(18px);border-top-color:rgba(255,255,255,.06)}
+[data-prof="forger"][data-theme="light"] #tabbar{background:rgba(255,255,255,.8)}
+[data-prof="forger"] #tabbar button.on svg{filter:drop-shadow(0 0 8px rgba(255,107,143,.6))}
+[data-prof="forger"] .runhero{border-radius:24px;background:radial-gradient(520px 240px at 100% 0%, rgba(255,107,143,.22), transparent 70%), var(--panel)}
+[data-prof="forger"] .bigdist{transform:none;font-weight:760}
+.studio{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px 14px;padding:2px 16px 6px;scrollbar-width:none}
+.studio::-webkit-scrollbar{display:none}
+.stile{flex:0 0 72%;max-width:300px;scroll-snap-align:start;border:0;border-radius:22px;padding:16px;text-align:left;color:#fff;min-height:148px;
+  display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;box-shadow:0 16px 34px -18px rgba(0,0,0,.8)}
+.stile .stcat{font-size:10px;letter-spacing:.22em;text-transform:uppercase;font-weight:800;opacity:.85}
+.stile .sttl{font-size:21px;font-weight:780;letter-spacing:-.015em;line-height:1.1;margin-top:6px}
+.stile .stmeta{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.stile .stmeta span{background:rgba(255,255,255,.18);border-radius:99px;padding:4px 9px;font-size:11px;font-weight:700}
+.stile .stplay{position:absolute;right:14px;bottom:14px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.92);color:#1a0f17;
+  display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900}
+.stile.g1{background:radial-gradient(260px 160px at 90% 10%,rgba(255,255,255,.22),transparent 60%),linear-gradient(140deg,#ff6b8f,#b23a74)}
+.stile.g2{background:radial-gradient(260px 160px at 90% 10%,rgba(255,255,255,.2),transparent 60%),linear-gradient(140deg,#c9a27a,#7a4e5e)}
+.stile.g3{background:radial-gradient(260px 160px at 90% 10%,rgba(255,255,255,.2),transparent 60%),linear-gradient(140deg,#8e6cff,#4b2f7d)}
+.stile.g4{background:radial-gradient(260px 160px at 90% 10%,rgba(255,255,255,.2),transparent 60%),linear-gradient(140deg,#ff9a76,#d1495b)}
+.stile.g5{background:radial-gradient(260px 160px at 90% 10%,rgba(255,255,255,.2),transparent 60%),linear-gradient(140deg,#46b5a0,#24556e)}
+.streak{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:6px 11px;font-size:12px;font-weight:800;
+  background:linear-gradient(95deg,rgba(255,107,143,.22),rgba(233,201,161,.18));border:1px solid rgba(255,107,143,.35);color:var(--text)}
+#coachbubble{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 10px);transform:translate(-50%,-140%);z-index:60;max-width:min(92vw,440px);
+  display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--accent);border-radius:16px;padding:11px 14px;
+  font-size:14.5px;font-weight:600;box-shadow:0 12px 30px rgba(0,0,0,.35);transition:transform .35s cubic-bezier(.2,.8,.2,1);color:var(--text)}
+#coachbubble.show{transform:translate(-50%,0)}
+#coachbubble .cbi{font-size:17px}
+.vrow{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.vrow:last-of-type{border-bottom:0}
+.vrow .vline{flex:1;font-size:13.5px;line-height:1.35}
+.vrow .vbtns{display:flex;gap:5px;flex:0 0 auto}
+.vrow.live .vline{color:var(--accent)}
+.chip.badc{background:var(--bad);color:#fff;border-color:var(--bad)}
+.mmsvg{display:block;width:100%;max-width:330px;margin:8px auto 0;height:auto}
+.mmsvg .mmbody{fill:var(--panel2);stroke:var(--panel2);stroke-linecap:round}
+.mmsvg .mmbody line{stroke:var(--panel2)}
+.mmsvg .mmreg{fill:var(--line);fill-opacity:.9}
+.mmsvg .mmreg.on{fill:var(--fig-hl)}
+.mmsvg .mmlbl{font:600 8px ui-sans-serif,system-ui,sans-serif;letter-spacing:.14em;fill:var(--dim)}
+.mmcard .mmsvg{background:var(--panel2);border-radius:12px;padding:6px 0 2px}
+.mmleg{font-size:10.5px;color:var(--dim);display:flex;gap:6px;align-items:center}
+.mmleg i{display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--fig-hl)}
+.mmleg i.s{opacity:.45}
+.mmmini .mmsvg{max-width:210px;background:var(--panel2);border-radius:12px;margin-top:10px}
 .togc .tgrow{display:flex;gap:10px;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--line)}
 .togc .tgrow:last-of-type{border-bottom:0}
 .togc .tgwho{min-width:64px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
@@ -4494,7 +4663,7 @@ function stretchSay(){
   const st = stretchCur(); if(!st) return;
   const side = st.sides ? (ST.side? ' Second side.':' First side.') : '';
   const hh = holdFor(ST.list[ST.i], ST.kind), len = hh>=120 ? Math.round(hh/60)+' minutes' : hh+' seconds';
-  say(st.n+'.'+side+' '+len+'. '+st.cue, true);
+  say(st.n+' · '+len+(side?' ·'+side:'')+' — '+st.cue, true, ST.side ? 'switch' : 'next');
 }
 function stretchTick(reset){
   if(ST.timer){ clearInterval(ST.timer); ST.timer=null; }
@@ -4526,7 +4695,7 @@ function stretchFinish(){
   S.stretches.push({date:todayS(), kind:ST.kind, min:mins});
   if(S.stretches.length>200) S.stretches.splice(0, S.stretches.length-200);
   save();
-  say('Done. Nice work.', true);
+  say('Done. Nice work.', true, 'done');
   UI.view = ST.back==='stretch' ? 'home' : ST.back;
   render();
   toast('Stretched '+mins+' min ✓');
@@ -4550,6 +4719,7 @@ function rStretch(){
     '<div class="stclock'+(ST.left<=5?' warn':'')+'" id="st-clock">'+ST.left+'</div>'+
     '<div class="stside">'+(st.sides? (ST.side? '<b>Second side</b>':'<b>First side</b>')+' · '+holdTxt(ST.list[ST.i],ST.kind)+' each' : (st.dyn? 'keep moving · ':'')+holdTxt(ST.list[ST.i],ST.kind)+(st.dyn?'':' hold'))+'</div>'+
     '<div class="disp h2 mt14" style="text-align:center">'+esc(st.n)+'</div>'+
+    '<div class="mmmini">'+muscleMapSVG({primary:musRegions(st.area.slice(0,1)), secondary:musRegions(st.area.slice(1))})+'</div>'+
     '<div class="stchips" style="justify-content:center">'+st.area.map(a=>'<span class="chip dimc">'+esc(a)+'</span>').join('')+'</div>'+
     '<div class="card mt12"><ol style="margin:0;padding-left:18px">'+st.how.map(h=>'<li>'+esc(h)+'</li>').join('')+'</ol>'+
       '<div class="fine mt10"><b>Cue:</b> '+esc(st.cue)+'</div></div>'+
@@ -4558,6 +4728,33 @@ function rStretch(){
       '<button class="btn '+(ST.run?'':'primary')+'" data-a="st-pause">'+(ST.run?'Pause':'Resume')+'</button>'+
       '<button class="btn" data-a="st-next">Next</button>'+
     '</div><div style="height:16px"></div></div>';
+}
+/* weeks in a row with at least 3 sessions (lifts, runs, stretch sessions) */
+function weekStreak(){
+  const per = {};
+  const add = d => { if(!d) return; const m = monOf(d); per[m] = (per[m]||0)+1; };
+  for(const w of (S.workouts||[])) add(w.date);
+  for(const r of (S.runs||[])) add(r.date);
+  for(const x of (S.stretches||[])) if(x.kind!=='session') add(x.date);
+  let wk = monOf(todayS()), n = 0;
+  if((per[wk]||0) < 3) wk = fmtD(new Date(parseD(wk).getTime()-7*86400000));
+  while((per[wk]||0) >= 3){ n++; wk = fmtD(new Date(parseD(wk).getTime()-7*86400000)); }
+  return {weeks:n, thisWeek: per[monOf(todayS())]||0};
+}
+function studioRow(t, sug){
+  if(P.id!=='forger') return '';
+  const lift = sug && sug.mode==='lift' ? sug.key : null;
+  const tiles = [];
+  if(lift) tiles.push(['g1','Today\u2019s class', DAY_META[lift].name.split(' · ')[1]||DAY_META[lift].name, ['~45 min','Strength','Glutes'], 'st-lift', lift]);
+  tiles.push(['g2','Stretch','Everyday Mobility Reset',[stretchMinutes(RESET_FLOW)+' min','Full body'],'stretch-reset','']);
+  tiles.push(['g4','Audio run', planById('easy30').name, [Math.round(planTotal('easy30')/60)+' min','Outdoor','Coached'],'st-run','easy30']);
+  tiles.push(['g3','Intervals', planById('int42').name, [Math.round(planTotal('int42')/60)+' min','Outdoor','HIIT'],'st-run','int42']);
+  if(!runReadyOK()) tiles.push(['g5','Return to run', planById('return1').name.replace('Return to run · ',''), [Math.round(planTotal('return1')/60)+' min','Walk / run'],'st-run','return1']);
+  tiles.push(['g5','Cool-down','Runner\u2019s cool-down',[stretchMinutes(RUN_COOLDOWN)+' min','Legs','Hips'],'stretch-run','']);
+  return '<div class="between" style="margin:2px 2px 10px"><span class="klabel">Studio</span><span class="fine">swipe for classes</span></div>'+
+    '<div class="studio">'+tiles.map(([g,cat,ttl,meta,act,k])=>
+      '<button class="stile '+g+'" data-a="'+act+'" data-k="'+k+'"><div><div class="stcat">'+esc(cat)+'</div><div class="sttl">'+esc(ttl)+'</div></div>'+
+      '<div class="stmeta">'+meta.map(m=>'<span>'+esc(m)+'</span>').join('')+'</div><span class="stplay">▶</span></button>').join('')+'</div>';
 }
 function togetherCard(t, sug){
   const other = PROFILES[P.id==='forge' ? 'forger' : 'forge'];
@@ -4613,6 +4810,8 @@ document.addEventListener('click', function(e){
   switch(a){
     case 'st-one':       stretchStart([b.dataset.id], 'Stretch', UI.view==='stretch'?'home':UI.view, 'single'); break;
     case 'who-open':     UI.view='choose'; render(); break;
+    case 'st-lift':      if(S.active) nav('player'); else startDay(b.dataset.k); break;
+    case 'st-run':       UI.planId=b.dataset.k; nav('run'); break;
     case 'tips-hide':    S.tipsSeen=true; save(); render(true); break;
     case 'run-warm':     stretchStart(WARM_RUN, 'Run warm-up', 'run', 'warm'); break;
     case 'who-pick':     switchProfile(b.dataset.id); break;
@@ -4628,6 +4827,174 @@ document.addEventListener('click', function(e){
 });
 </script>
 
+<script>
+/* =================== COACH VOICE ===================
+   Real recordings only. A person reads each line once on the Coach Voice
+   screen; those clips play during workouts, runs and stretches. With no
+   recording, the line shows on screen with a soft chime. The phone's
+   computer voice is never used. */
+const CUES = [
+  {k:'go',       g:'Start & finish', line:'Alright, let\u2019s go. Start easy and settle in.'},
+  {k:'open',     g:'Start & finish', line:'This is your time. Nobody needs anything from you right now. Let\u2019s work.'},
+  {k:'done',     g:'Start & finish', line:'That\u2019s it. You did it. Be proud of that.'},
+  {k:'paused',   g:'Start & finish', line:'Paused. Take a breath.'},
+  {k:'resume',   g:'Start & finish', line:'Back at it.'},
+  {k:'ten',      g:'Intervals',      line:'Ten seconds. Get ready.'},
+  {k:'pickup',   g:'Intervals',      line:'Pick it up. Push now.'},
+  {k:'easeoff',  g:'Intervals',      line:'Ease off. Recover. Shake it out.'},
+  {k:'next',     g:'Intervals',      line:'Next one. Set up and breathe.'},
+  {k:'switch',   g:'Intervals',      line:'Switch sides.'},
+  {k:'mile',     g:'Running',        line:'That\u2019s another mile. Check your pace on the screen.'},
+  {k:'halfmile', g:'Running',        line:'Half a mile down. Keep it smooth.'},
+  {k:'time',     g:'Running',        line:'Five more minutes in the bank.'},
+  {k:'ahead',    g:'Running',        line:'You\u2019re ahead of your pace. Hold it right there.'},
+  {k:'behind',   g:'Running',        line:'A little behind pace. Find one more gear.'},
+  {k:'ontarget', g:'Running',        line:'Right on pace. Stay relaxed.'},
+  {k:'careful',  g:'Running',        line:'Keep this one easy. Stop if anything feels off.'},
+  {k:'m1',       g:'Motivation',     line:'You are stronger than you were last week.'},
+  {k:'m2',       g:'Motivation',     line:'Drop your shoulders. Breathe. You\u2019ve got this.'},
+  {k:'m3',       g:'Motivation',     line:'Every step counts. Keep stacking them.'},
+  {k:'m4',       g:'Motivation',     line:'This is the part that changes you. Stay with it.'},
+  {k:'m5',       g:'Motivation',     line:'Look at you go. I\u2019m proud of you.'},
+  {k:'m6',       g:'Motivation',     line:'Strong legs, strong mind. Keep going.'}
+];
+const VOICE = {urls:{}, queue:[], playing:null, log:[], rec:null, recKey:null, chunks:[], db:null};
+function vdb(){
+  return new Promise((res, rej) => {
+    if(VOICE.db) return res(VOICE.db);
+    if(!window.indexedDB) return rej('no idb');
+    const r = indexedDB.open('forge_voice', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('clips');
+    r.onsuccess = () => { VOICE.db = r.result; res(VOICE.db); };
+    r.onerror = () => rej(r.error);
+  });
+}
+const vkey = k => P.id+':'+k;
+async function vput(k, blob){ const db=await vdb(); return new Promise((res,rej)=>{ const t=db.transaction('clips','readwrite'); t.objectStore('clips').put(blob, vkey(k)); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); }); }
+async function vdel(k){ const db=await vdb(); return new Promise((res)=>{ const t=db.transaction('clips','readwrite'); t.objectStore('clips').delete(vkey(k)); t.oncomplete=()=>res(); t.onerror=()=>res(); }); }
+async function vloadAll(){
+  for(const u of Object.values(VOICE.urls)) try{ URL.revokeObjectURL(u); }catch(e){}
+  VOICE.urls = {};
+  try{
+    const db = await vdb();
+    await new Promise(res => {
+      const t = db.transaction('clips','readonly'), st = t.objectStore('clips'), c = st.openCursor();
+      c.onsuccess = () => { const cur = c.result; if(!cur){ res(); return; }
+        const [pid, k] = String(cur.key).split(':'); if(pid===P.id && cur.value) VOICE.urls[k] = URL.createObjectURL(cur.value); cur.continue(); };
+      c.onerror = () => res();
+    });
+  }catch(e){}
+}
+function chime(){
+  try{
+    if(!audioCtx) return;
+    const mk=(t,f,v)=>{ const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+      o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(audioCtx.destination);
+      g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(v,t+0.03); g.gain.exponentialRampToValueAtTime(0.0001,t+0.6); o.start(t); o.stop(t+0.65); };
+    const now=audioCtx.currentTime; mk(now,659,0.18); mk(now+0.16,988,0.14);
+  }catch(e){}
+}
+function showBubble(txt){
+  let b = document.getElementById('coachbubble');
+  if(!b){ b=document.createElement('div'); b.id='coachbubble'; document.body.appendChild(b); }
+  b.innerHTML = '<span class="cbi">'+(Object.keys(VOICE.urls).length?'🎙':'♪')+'</span><span>'+esc(txt)+'</span>';
+  b.classList.add('show'); clearTimeout(VOICE.bt); VOICE.bt = setTimeout(()=>b.classList.remove('show'), 4200);
+}
+function playClip(k){
+  const u = VOICE.urls[k]; if(!u) return false;
+  const go = () => { const a = new Audio(u); VOICE.playing = a; a.onended = a.onerror = () => { VOICE.playing=null; const nx=VOICE.queue.shift(); if(nx) playClip(nx); }; a.play().catch(()=>{ VOICE.playing=null; }); };
+  if(VOICE.playing){ VOICE.queue.push(k); return true; }
+  go(); return true;
+}
+/* the one entry point: text always shows; a recording plays if there is one */
+function say(txt, force, key){
+  const c = coachCfg();
+  if(!force && (!c.on || c.style==='off')) return;
+  VOICE.log.push({key:key||'', text:txt}); if(VOICE.log.length>60) VOICE.log.shift();
+  showBubble(txt);
+  if(!(key && playClip(key))) chime();
+}
+function motivate(){
+  const recs = CUES.filter(q=>q.g==='Motivation' && VOICE.urls[q.k]);
+  if(recs.length) return playClip(pick(recs).k);
+  return false;
+}
+function shutUp(){ VOICE.queue=[]; try{ if(VOICE.playing){ VOICE.playing.pause(); VOICE.playing=null; } }catch(e){} }
+function speechOK(){ return true; }
+
+/* ---------- recording ---------- */
+async function recStart(k){
+  if(VOICE.rec){ recStop(); return; }
+  if(!navigator.mediaDevices || !window.MediaRecorder){ toast('This browser can\u2019t record audio'); return; }
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true}});
+    const mt = ['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(t=>MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
+    const r = new MediaRecorder(stream, mt?{mimeType:mt}:undefined);
+    VOICE.rec = r; VOICE.recKey = k; VOICE.chunks = [];
+    r.ondataavailable = e => { if(e.data && e.data.size) VOICE.chunks.push(e.data); };
+    r.onstop = async () => {
+      stream.getTracks().forEach(t=>t.stop());
+      const blob = new Blob(VOICE.chunks, {type: r.mimeType||mt||'audio/mp4'});
+      const key = VOICE.recKey; VOICE.rec=null; VOICE.recKey=null;
+      if(blob.size > 800){ await vput(key, blob); await vloadAll(); toast('Saved'); playClip(key); } else toast('Too short — try again');
+      render(true);
+    };
+    r.start(); render(true);
+    VOICE.recTimer = setTimeout(()=>{ if(VOICE.rec) recStop(); }, 15000);
+  }catch(e){ toast('Microphone blocked — allow it in Settings'); }
+}
+function recStop(){ clearTimeout(VOICE.recTimer); try{ if(VOICE.rec && VOICE.rec.state!=='inactive') VOICE.rec.stop(); }catch(e){} }
+
+/* ---------- sharing a voice pack between phones ---------- */
+async function voiceExport(){
+  const out = {forge_voice:1, from:P.id, clips:{}};
+  const db = await vdb();
+  const list = await new Promise(res=>{ const arr=[]; const c=db.transaction('clips','readonly').objectStore('clips').openCursor();
+    c.onsuccess=()=>{ const cur=c.result; if(!cur){ res(arr); return; } if(String(cur.key).startsWith(P.id+':')) arr.push([String(cur.key).split(':')[1], cur.value]); cur.continue(); }; c.onerror=()=>res(arr); });
+  for(const [k,b] of list){ out.clips[k] = await new Promise(res=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.readAsDataURL(b); }); }
+  const blob = new Blob([JSON.stringify(out)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = P.name.toLowerCase()+'-coach-voice.json'; a.setAttribute('download', a.download);
+  document.body.appendChild(a); a.click(); setTimeout(()=>a.remove(), 500);
+  toast(list.length+' clips exported');
+}
+async function voiceImport(file){
+  try{
+    const o = JSON.parse(await file.text()); if(!o || !o.clips) throw 0;
+    let n=0; for(const [k,d] of Object.entries(o.clips)){ if(!CUES.find(q=>q.k===k)) continue; const b = await (await fetch(d)).blob(); await vput(k,b); n++; }
+    await vloadAll(); render(true); toast(n+' recordings added');
+  }catch(e){ toast('That file isn\u2019t a coach voice pack'); }
+}
+
+function rVoice(){
+  const groups = [...new Set(CUES.map(q=>q.g))];
+  const done = CUES.filter(q=>VOICE.urls[q.k]).length;
+  return '<div class="row mb10"><button class="btn small ghost" data-a="nav" data-v="settings">&#8249; Settings</button></div>'+
+    '<div class="pagehead"><div><div class="klabel">'+esc(P.name)+'</div><div class="disp h1">Coach voice</div></div><span class="chip '+(done===CUES.length?'goodc':'dimc')+' num">'+done+' / '+CUES.length+'</span></div>'+
+    '<div class="card acc flat"><div class="fine" style="color:var(--text)">A real person reads each line once — you, your partner, a friend. Read it like you mean it. These recordings play during workouts, runs and stretches. Paces and splits show big on screen, so nobody has to read numbers. Lines you haven\u2019t recorded show on screen with a soft chime. No computer voice is ever used.</div>'+
+      '<div class="grid2 mt12"><button class="btn" data-a="v-export">Send this voice</button><button class="btn" data-a="v-import">Add a voice file</button></div>'+
+      '<div class="fine mt6">To record for someone else\u2019s phone: switch to their program in Settings, record here, tap Send this voice, and text them the file. They tap Add a voice file.</div></div>'+
+    groups.map(g=>'<div class="card"><span class="klabel">'+esc(g)+'</span>'+
+      CUES.filter(q=>q.g===g).map(q=>{
+        const has = !!VOICE.urls[q.k], live = VOICE.recKey===q.k;
+        return '<div class="vrow'+(live?' live':'')+'"><div class="vline">'+esc(q.line)+'</div><div class="vbtns">'+
+          '<button class="chip '+(live?'badc':'accc')+'" data-a="v-rec" data-k="'+q.k+'">'+(live?'■ Stop':(has?'● Redo':'● Record'))+'</button>'+
+          (has? '<button class="chip" data-a="v-play" data-k="'+q.k+'">▶</button><button class="chip dimc" data-a="v-del" data-k="'+q.k+'">✕</button>' : '')+
+        '</div></div>'; }).join('')+'</div>').join('')+
+    '<div style="height:16px"></div>';
+}
+document.addEventListener('click', function(e){
+  const b=e.target.closest('[data-a]'); if(!b) return;
+  const a=b.dataset.a, k=b.dataset.k;
+  if(a==='v-rec'){ unlockAudio(); recStart(k); }
+  else if(a==='v-play'){ shutUp(); playClip(k); }
+  else if(a==='v-del'){ vdel(k).then(vloadAll).then(()=>render(true)); }
+  else if(a==='v-export'){ voiceExport(); }
+  else if(a==='v-import'){ const f=$('#voicefile'); if(f){ f.value=''; f.click(); } }
+});
+Object.assign(window,{VOICE,CUES,say,playClip});
+document.addEventListener('change', function(e){ if(e.target && e.target.id==='voicefile' && e.target.files && e.target.files[0]) voiceImport(e.target.files[0]); });
+
+</script>
 <script>
 'use strict';
 /* =================== WORKOUT PLAYER =================== */
@@ -5174,6 +5541,7 @@ function migrateKeys(){
 }
 function bootProfile(id){
   applyProfile(id);
+  if(typeof vloadAll==='function') vloadAll().then(()=>{ if(UI.view==='voice'||UI.view==='run'||UI.view==='settings') render(true); });
   S = load();
   if(!S){ S = defaults(); ensureWeek(todayS()); save(); }
   migrateKeys();
@@ -5214,7 +5582,7 @@ window.App = {
 Object.assign(window,{haversine,ptsMeters,fmtDur,pace,splitsOf,encPoly,decPoly,runCode,parseCode,runWeek,MI,
   project,spreadOverlaps,routeSVG,mileCol,RUNPLANS,planPhases,planTotal,coachTick,coachCfg,say,coachOwnLine,
   slotList,targetsFor,todayS,ST,STRETCHDB,stretchAdvance,stretchStop,cooldownFor,RUN_READY,runReadyOK,warmupFor,sessionPhase,viewCfg,
-  PROFILES,holdFor,SHARED_DINNERS,SHARED_BREAKFASTS,mapFit,figPoseAt,monOf,typeFor,parseD});
+  PROFILES,holdFor,SHARED_DINNERS,SHARED_BREAKFASTS,mapFit,figPoseAt,monOf,typeFor,parseD,musRegions,muscleMapSVG,weeklyMuscleHeat,pang});
 Object.defineProperty(window,'P',{get:()=>P});
 Object.defineProperty(window,'DAY_META',{get:()=>DAY_META});
 </script>
