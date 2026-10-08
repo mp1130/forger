@@ -386,14 +386,14 @@ const FORGER_PROGRAM = {
     {id:'hip_thrust',sets:4,lo:10,hi:12,comp:1},
     {id:'goblet_squat',sets:3,lo:10,hi:12,comp:1},
     {id:'step_up',sets:3,lo:8,hi:10,comp:1,side:1},
-    {id:'lateral_band_walk',sets:3,lo:12,hi:15,side:1},
+    {id:'curtsy_lunge',sets:3,lo:10,hi:12,comp:1,side:1},
     {id:'dead_bug',sets:3,lo:6,hi:10,side:1},
     {id:'bone_jumps',sets:2,lo:10,hi:10}
   ]},
   upA:{focus:'Chest, shoulders, arms, core + glute finisher',slots:[
     {id:'floor_press',sets:3,lo:8,hi:12,comp:1},
     {id:'ohp',sets:3,lo:8,hi:12,comp:1},
-    {id:'incline_pushup',sets:3,lo:8,hi:12},
+    {id:'floor_fly',sets:3,lo:10,hi:12},
     {id:'pallof_press',sets:3,lo:8,hi:12,side:1},
     {id:'side_plank',sets:3,lo:20,hi:40,side:1},
     {id:'glute_kickback',sets:2,lo:12,hi:15,side:1}
@@ -436,9 +436,9 @@ const PROFILES = {
     },
     program:FORGE_PROGRAM,
     swGroups:{
-      push:['floor_press','ohp','lateral_raise','oh_tricep','pushup','incline_pushup'],
+      push:['floor_press','ohp','lateral_raise','oh_tricep','pushup','incline_pushup','floor_fly'],
       pull:['db_row','face_pull','band_pulldown','curl','rear_delt_fly'],
-      legs:['goblet_squat','rdl','bulgarian_ss','glute_bridge','calf_raise','walking_lunge','sl_glute_bridge','extra_bridge','hip_thrust','step_up','sl_rdl'],
+      legs:['goblet_squat','rdl','bulgarian_ss','glute_bridge','calf_raise','walking_lunge','sl_glute_bridge','extra_bridge','hip_thrust','step_up','sl_rdl','curtsy_lunge'],
       core:['dead_bug','bird_dog','plank','side_plank','pallof_press','reverse_crunch']
     },
     warmup:['5 min easy spin on the bike','Arm circles — 10 each direction','10 bodyweight squats','Band pull-aparts — 2 × 15'],
@@ -455,7 +455,7 @@ const PROFILES = {
     profile:{heightIn:71, weightLb:200, calorieLift:2800, calorieRest:2600, proteinG:190},
     settings:{carbLift:290, carbRest:240, fatG:80, waterGoalL:3.5},
     targetsNote:'Plan defaults: lift 2,700–2,900 kcal · rest 2,500–2,700 (carbs ~40–60 g lower) · protein 180–200 g · fat 70–90 g.',
-    rules:'Same rhythm as FORGER so you can train together: Mon legs · Tue upper push · Wed ride or run together · Thu legs · Fri upper pull · weekend walks. Warm-up and cool-down are identical for both of you each day. Miss a day and it shifts forward. Stop every set 1–2 reps before failure.',
+    rules:'Same rhythm as FORGER so you can train together: Mon legs · Tue upper push · Wed ride or run together · Thu legs · Fri upper pull · weekend walks. Warm-up and cool-down are identical for both of you each day. Miss a day and it shifts forward. Lower every rep over 3 seconds, keep rests short, and take the last set of each exercise to failure.',
     cardio:{title:'Easy Bike', sub:'20–30 min conversational spin. Recovery, not a race.', btn:'Log bike ride', done:'Ride logged ✓', doneSub:'Easy day handled. Legs will thank you Thursday.', libTitle:'Easy Bike · Wed', libSub:'20–30 min conversational spin, or full rest.'},
     rest:{title:'Walk / Rest', sub:'Off day. A 20–40 min walk counts double on a bulk.'},
     trainedSub:'Lifting is done. Eat, walk, sleep — that&#8217;s where the muscle gets built.',
@@ -478,9 +478,9 @@ const PROFILES = {
     },
     program:FORGER_PROGRAM,
     swGroups:{
-      push:['floor_press','ohp','incline_pushup','pushup','lateral_raise','oh_tricep'],
+      push:['floor_press','ohp','floor_fly','incline_pushup','pushup','lateral_raise','oh_tricep'],
       pull:['db_row','band_pulldown','face_pull','curl','rear_delt_fly'],
-      legs:['goblet_squat','hip_thrust','step_up','rdl','sl_rdl','bulgarian_ss','sl_glute_bridge','glute_bridge','walking_lunge','lateral_band_walk','calf_raise','extra_bridge','glute_kickback'],
+      legs:['goblet_squat','hip_thrust','step_up','rdl','sl_rdl','bulgarian_ss','curtsy_lunge','sl_glute_bridge','glute_bridge','walking_lunge','lateral_band_walk','calf_raise','extra_bridge','glute_kickback'],
       core:['dead_bug','pallof_press','side_plank','bird_dog','plank','reverse_crunch']
     },
     warmup:['5 min brisk walk or easy bike','Cat-cow × 8, then 10 slow bodyweight squats','Glute bridge × 10 with a 2 s squeeze at the top','Band pull-aparts × 15 · side-lying leg lifts × 10 each'],
@@ -497,7 +497,7 @@ const PROFILES = {
     profile:{heightIn:67, weightLb:135, calorieLift:2000, calorieRest:1850, proteinG:125, breastfeeding:false},
     settings:{carbLift:230, carbRest:190, fatG:65, waterGoalL:3.0},
     targetsNote:'Plan defaults for 5\u20197\u201d, 135 lb: lift 2,000 kcal · rest 1,850 · protein ~125 g · fat ~65 g. Breastfeeding adds ~400 kcal and removes the deficit — the toggle does that for you.',
-    rules:'Same rhythm as FORGE so you can train together: Mon legs · Tue upper push · Wed run or walk together · Thu legs · Fri upper pull · weekend run, walk or rest. Glutes get trained four days a week and core every lifting day. Exhale on the hard part of every rep. Stop 2 reps before failure. Any leaking, heaviness, or doming down the middle of your belly means stop and scale back.',
+    rules:'Same rhythm as FORGE so you can train together: Mon legs · Tue upper push · Wed run or walk together · Thu legs · Fri upper pull · weekend run, walk or rest. Glutes get trained four days a week and core every lifting day. Exhale on the hard part of every rep. Lower every rep over 3 seconds and take the last set to failure with good form. Any leaking, heaviness, or doming down the middle of your belly means stop and scale back.',
     cardio:{title:'Run / Walk', sub:'20–40 min easy. Conversational pace — you should be able to talk.', btn:'Log a walk or ride', done:'Cardio logged ✓', doneSub:'Easy day handled. Legs are recovering.', libTitle:'Run / Walk · Wed', libSub:'Run if you are run-ready, otherwise a brisk walk. 20–40 min easy.'},
     rest:{title:'Run · Walk · Rest', sub:'Off day. A walk with the stroller counts. Sleep when you can.'},
     trainedSub:'Done. Eat your protein, drink water, and the rest happens while you sleep.',
@@ -1396,6 +1396,56 @@ glute_kickback:{n:'Quadruped Glute Kickback',grp:'legs',mus:['Glutes','Hamstring
   'Wrists hurt: do it on the forearms.',
   'Knee discomfort on the floor: fold a towel under the kneeling knee.']},
 
+floor_fly:{n:'Dumbbell Floor Fly',grp:'push',mus:['Chest','Front delts','Biceps'],
+ setup:'Lie on your back on a mat, knees bent, a light dumbbell in each hand pressed over your chest.',
+ steps:[
+  'Start with the dumbbells together over your chest, palms facing each other, elbows slightly bent.',
+  'Open your arms out wide in a big arc, keeping that same soft bend in the elbows.',
+  'Lower until the backs of your upper arms touch the floor. The floor is your safety stop.',
+  'Squeeze your chest and hug the dumbbells back together over the chest.',
+  'Keep the shoulders pinned down and away from your ears the whole time.'],
+ cues:[
+  'Hug a big tree. The arc matters more than the weight.',
+  'Elbows stay soft and fixed. If they bend more, it turns into a press.',
+  'Squeeze the chest hard at the top for a full second.',
+  'Three seconds down on every rep.'],
+ mistakes:[
+  'Going too heavy so the arms bend into a press.',
+  'Dropping the weights onto the floor instead of lowering them.',
+  'Shrugging the shoulders up.'],
+ breath:'Breathe in as the arms open, breathe out as you squeeze them together.',
+ bottom:'Arms wide, upper arms on the floor, soft elbows.',
+ top:'Dumbbells together over the chest, chest squeezed.',
+ subs:[
+  'Too hard: lighter dumbbells, or bend the elbows a little more.',
+  'Too easy: slower, four seconds down, and a pause at the floor.',
+  'No dumbbells: water bottles or a band anchored behind you.']},
+
+curtsy_lunge:{n:'Curtsy Lunge',grp:'legs',mus:['Glutes','Glute medius','Quads','Inner thighs'],
+ setup:'Dumbbells at your sides, feet hip-width, clear space behind you.',
+ steps:[
+  'Stand tall with your weight on the right foot.',
+  'Step the left foot back and across, behind the right, like a curtsy.',
+  'Bend both knees and sink until the front thigh is near parallel.',
+  'Keep the front knee tracking over the middle of the front foot, chest up.',
+  'Drive through the front heel to stand back up. Do all reps on one side, then switch.'],
+ cues:[
+  'Hips stay square to the front. Only the back leg travels.',
+  'Front knee follows the toes, it never caves in.',
+  'Three seconds down, then drive up through the front heel.',
+  'You should feel the outside of the front glute burning. That is the point.'],
+ mistakes:[
+  'Stepping so far across that the hips twist.',
+  'Letting the front knee collapse inward.',
+  'Bouncing off the bottom.'],
+ breath:'Breathe in on the way down, out as you drive up.',
+ bottom:'Back knee just above the floor behind the front foot, front thigh near parallel.',
+ top:'Standing tall, weight on the front foot, glute squeezed.',
+ subs:[
+  'Too hard: bodyweight only, hand on a wall for balance.',
+  'Too easy: heavier dumbbells, or a pause at the bottom.',
+  'Knee discomfort: shorter step, less depth.']},
+
 bone_jumps:{n:'Bone Jumps',grp:'legs',mus:['Bone density','Calves','Glutes'],
  setup:'Clear floor, shoes on. Run-ready check passed first. This is a bone-loading drill, not cardio.',
  steps:[
@@ -1426,7 +1476,7 @@ bone_jumps:{n:'Bone Jumps',grp:'legs',mus:['Bone density','Calves','Glutes'],
 Object.assign(LOAD, {
   hip_thrust:'db', step_up:'db', lateral_band_walk:'band', dead_bug:'bw', incline_pushup:'bw',
   pallof_press:'band', side_plank:'time', sl_rdl:'db', bird_dog:'bw', plank:'time',
-  reverse_crunch:'bw', bone_jumps:'bw', glute_kickback:'bw'
+  reverse_crunch:'bw', bone_jumps:'bw', glute_kickback:'bw', floor_fly:'db', curtsy_lunge:'db'
 });
 
 </script>
@@ -1438,9 +1488,9 @@ let S = null;
 function defaults(){
   return {
     v:1,
-    profileId:P.id, keysV:2,
+    profileId:P.id, keysV:2, intensityV:1,
     profile:Object.assign({}, P.profile),
-    settings:Object.assign({theme:'dark', restCompound:120, restIso:90,
+    settings:Object.assign({theme:'dark', restCompound:90, restIso:60,
               coach:{on:true, every:'mile', targetPace:0, style:'coach', lines:[]}}, P.settings),
     quickMeals: QUICK_DEFAULT.map(m=>Object.assign({},m)),
     overrides:{},              // dayKey -> {slotIndex: exerciseId}
@@ -1466,6 +1516,7 @@ function load(){
     const d = JSON.parse(raw);
     if(!d || !d.profile) return null;
     if(d.keysV===undefined) d.keysV = 1;
+    if(d.intensityV===undefined) d.intensityV = 0;
     const base = defaults();
     for(const k of Object.keys(base)) if(d[k]===undefined) d[k]=base[k];
     return d;
@@ -1788,7 +1839,8 @@ function rHome(){
     return '<div class="flowcard mt10">'+
       '<div class="fstep"><i>1</i><div><b>Warm-up</b><span>'+w.length+' movements · '+stretchMinutes(w,'warm')+' min</span></div></div>'+
       '<div class="fstep"><i>2</i><div><b>'+(P.id==='forger'?'Workout':'Lift')+'</b><span>'+n+' exercises · ~35 min</span></div></div>'+
-      '<div class="fstep"><i>3</i><div><b>Cool-down</b><span>'+c.length+' stretches · '+stretchMinutes(c)+' min</span></div></div>'+
+      '<div class="fstep"><i>3</i><div><b>Finisher</b><span>3 rounds · 6 min nonstop</span></div></div>'+
+      '<div class="fstep"><i>4</i><div><b>Cool-down</b><span>'+c.length+' stretches · '+stretchMinutes(c)+' min</span></div></div>'+
     '</div>';
   };
   const startBits = k => {
@@ -1805,9 +1857,10 @@ function rHome(){
       '<div class="flowcard mt10">'+
         stepRow(0,'Warm-up',(a.warm||[]).filter(id=>(a.warmDone||{})[id]).length+' of '+(a.warm||[]).length+' done')+
         stepRow(1,(P.id==='forger'?'Workout':'Lift'),sets+' sets logged')+
-        stepRow(2,'Cool-down',(a.cool||[]).filter(id=>(a.coolDone||{})[id]).length+' of '+(a.cool||[]).length+' done')+
+        ((a.fin||[]).length ? stepRow(2,'Finisher',a.finDone?'done':'6 min, nonstop') : '')+
+        stepRow((a.fin||[]).length?3:2,'Cool-down',(a.cool||[]).filter(id=>(a.coolDone||{})[id]).length+' of '+(a.cool||[]).length+' done')+
       '</div>'+
-      '<button class="btn primary mt14" data-a="pl-resume">'+(ph===0?'Continue warm-up':ph===1?'Back to the workout':ph===2?'Finish with the cool-down':'Save the session')+'</button></div>';
+      '<button class="btn primary mt14" data-a="pl-resume">'+(ph===0?'Continue warm-up':ph===1?'Back to the workout':ph===2?'Do the finisher':ph===3?'Finish with the cool-down':'Save the session')+'</button></div>';
   } else if(sug.mode==='lift'){
     sessionCard = '<div class="card">'+startBits(sug.key)+
       (sug.shifted?'<div class="mt10"><span class="chip warnc">Shifted forward — catching up</span></div>':'')+
@@ -1946,7 +1999,10 @@ function rPreview(){
     '<div class="fine mt6">Same warm-up for both of you today. Each move has its own timer and tick box in the session.</div></div>'+
   '<div class="klabel" style="margin:12px 4px 6px">2 · '+(P.id==='forger'?'Workout':'Lift')+'</div>'+
   '<div class="card">'+rows+'<div class="fine mt10">⇄ swaps an exercise for an approved substitute. History always stays with each exercise.</div></div>'+
-  '<div class="card"><div class="between"><span class="klabel">3 · Cool-down</span><span class="fine">'+stretchMinutes(cooldownFor(k))+' min</span></div>'+
+  (finisherFor(k).length ? '<div class="card"><div class="between"><span class="klabel">3 · Finisher</span><span class="fine">6 min</span></div>'+
+     '<div class="stchips">'+finisherMoves(finisherFor(k)).map(id=>'<span class="chip">'+esc(STRETCHDB[id].n)+'</span>').join('')+'</div>'+
+     '<div class="fine mt6">3 rounds, 40 seconds on, 20 off, right after the last set.</div></div>' : '')+
+  '<div class="card"><div class="between"><span class="klabel">4 · Cool-down</span><span class="fine">'+stretchMinutes(cooldownFor(k))+' min</span></div>'+
     '<div class="stchips">'+cooldownFor(k).map(id=>'<button class="chip" data-a="st-one" data-id="'+id+'">'+esc(STRETCHDB[id].n)+'</button>').join('')+'</div>'+
     '<div class="fine mt6">Same cool-down for both of you today. The finish screen offers it automatically.</div>'+
     '<button class="btn mt10" data-a="stretch-day" data-k="'+k+'">Run the cool-down now</button></div>'+
@@ -3174,6 +3230,19 @@ const CY = (o) => Object.assign({anim:'cycle'}, o);
   STFIG.dy_reach = CY({label:'Front', gear:['floor'], la:'Reach over one way', lb:'Then the other', a:FV({t:-104, h:-108, a:[-118,-138], b:[96,92]}), b:FV({t:-76, h:-72, a:[84,88], b:[-62,-42]}), hl:['obliques','obliquesB']});
 })();
 
+/* ---------- round three: her new moves ---------- */
+(() => {
+  const tv = o => pose(Object.assign({front:1, top:1, x:62, y:66, ground:false, l:[96,90,82,0.7,0.6], ts:1}, o));
+  EXFIG.floor_fly = {label:'From above', gear:['mat'], la:'Bells over the chest, soft elbows', lb:'Open wide until the elbows touch the floor',
+    a:tv({a:[100,-100,0.35,0.35], b:[80,-80,0.35,0.35]}), b:tv({a:[6,12], b:[174,168]}), db:['hA','hB'], hl:['chest','shA','shB']};
+  const A = FV({a:[86,90], b:[94,90]});
+  let B = FV({ax:A.aA[0], ay:A.aA[1], l:[84,98,72,0.8,1], a:[86,90], b:[94,90], ground:false});
+  B = R(B,'aB',[A.aA[0]+9, A.aA[1]-6],'down',100);
+  EXFIG.curtsy_lunge = {label:'Front', gear:['floor'], la:'Stand tall, dumbbells at your sides', lb:'Step back and across, both knees bend', a:A, b:B,
+    db:['hA','hB'], hl:['glutes','quadA'], arrow:[[110,52,110,76]]};
+  STFIG.fn_rest = {label:'Front', gear:['floor'], anim:'hold', la:'Shake it out', lb:'Breathe', a:FV({}), b:FV({a:[82,86], b:[98,94]})};
+})();
+
 /* pick a camera angle */
 function viewCfg(id, v){
   if(typeof STRETCHDB!=='undefined' && STRETCHDB[id] && STRETCHDB[id].fig) id = STRETCHDB[id].fig;
@@ -4349,6 +4418,8 @@ function rPhaseBar(r){
 /* ============ STRETCH ============ */
 .wordmark{display:block;background:none;border:0;padding:0;margin-bottom:2px;color:var(--dim);cursor:pointer;font:inherit;letter-spacing:inherit;text-transform:inherit;font-size:inherit;text-align:left}
 .phasebar2{display:flex;gap:6px;margin:0 0 12px}
+.coachtxt p{margin:0;font-size:14px;line-height:1.5}
+.coachtxt .helpsteps li{font-size:13.5px}
 [data-prof="forger"] body{background:radial-gradient(1100px 520px at 90% -12%, rgba(255,107,143,.17), transparent 60%),
   radial-gradient(900px 480px at -15% 8%, rgba(233,201,161,.08), transparent 60%), var(--bg);background-attachment:fixed}
 [data-prof="forger"] .disp{transform:none;letter-spacing:-.015em;font-weight:760}
@@ -4545,7 +4616,7 @@ const STRETCH_MAP = {
   band_pulldown:['st_lat'], curl:['st_forearm'], walking_lunge:['st_hipflexor','st_quad'], step_up:['st_quad','st_fig4'],
   lateral_band_walk:['st_itband','st_adductor'], dead_bug:['st_catcow','st_child'], reverse_crunch:['st_catcow','st_child'],
   pallof_press:['st_thoracic','st_child'], side_plank:['st_thoracic','st_itband'], plank:['st_child','st_hipflexor'],
-  bird_dog:['st_thoracic','st_child'], bone_jumps:['st_calf'], glute_kickback:['st_fig4','st_hipflexor'],
+  bird_dog:['st_thoracic','st_child'], bone_jumps:['st_calf'], glute_kickback:['st_fig4','st_hipflexor'], floor_fly:['st_chest','st_cross'], curtsy_lunge:['st_hipflexor','st_fig4'],
   easy_bike:['st_hipflexor','st_quad','st_hamstring','st_calf']
 };
 const RUN_COOLDOWN = ['st_calf','st_quad','st_hipflexor','st_forward','st_fig4','st_neck'];
@@ -4597,6 +4668,30 @@ dy_calfpump:{n:'Ankle Bounces',area:['Calves','Ankles'],hold:30,sides:false,dyn:
 dy_highknees:{n:'High-Knee March',area:['Hip flexors','Core'],hold:30,sides:false,dyn:true,
   how:['March in place, driving each knee to hip height.','Opposite arm swings with the leg.','Tall posture, light feet. Speed it up in the last ten seconds.'],
   cue:'Knee up, foot down quietly.'},
+fn_squatpulse:{n:'Squat Pulses',area:['Quads','Glutes'],hold:40,sides:false,dyn:true,fin:true,fig:'goblet_squat',
+  how:['Sit into a squat and stay low.','Pulse up and down a few inches, never standing all the way up.'],cue:'Stay low. Let it burn.'},
+fn_revlunge:{n:'Alternating Reverse Lunges',area:['Glutes','Quads'],hold:40,sides:false,dyn:true,fin:true,fig:'walking_lunge',
+  how:['Step one foot back and drop the back knee toward the floor.','Drive back up and switch legs. Keep moving.'],cue:'Quick feet, tall chest.'},
+fn_pushup:{n:'Push-Up Burnout',area:['Chest','Triceps'],hold:40,sides:false,dyn:true,fin:true,fig:'pushup',
+  how:['As many push-ups as you can.','When your form breaks, drop to your knees and keep going.'],cue:'Chest to the floor, body in one line.'},
+fn_press:{n:'Shoulder Press Burnout',area:['Shoulders','Triceps'],hold:40,sides:false,dyn:true,fin:true,fig:'ohp',
+  how:['Lighter dumbbells, press overhead nonstop.','Ribs down, no leaning back.'],cue:'Smooth and steady, do not stop.'},
+fn_bridgepulse:{n:'Glute Bridge Pulses',area:['Glutes','Hamstrings'],hold:40,sides:false,dyn:true,fin:true,fig:'glute_bridge',
+  how:['Lift into a bridge and hold the top.','Pulse the hips up an inch and back, nonstop.'],cue:'Squeeze the glutes the whole time.'},
+fn_row:{n:'Row Burnout',area:['Back','Biceps'],hold:40,sides:false,dyn:true,fin:true,fig:'db_row',
+  how:['Hinge forward with both dumbbells.','Row both to the ribs, fast up, slow down.'],cue:'Elbows back, squeeze the shoulder blades.'},
+fn_curl:{n:'Curl Burnout',area:['Biceps','Forearms'],hold:40,sides:false,dyn:true,fin:true,fig:'curl',
+  how:['Light dumbbells, curl nonstop.','Elbows pinned to your sides.'],cue:'No swinging. Make the arms do it.'},
+fn_plank:{n:'Plank Hold',area:['Abs','Core'],hold:40,sides:false,dyn:false,fin:true,fig:'plank',
+  how:['Forearms down, body in one line.','Squeeze the glutes and push the floor away.'],cue:'Breathe. Hold it.'},
+fn_deadbug:{n:'Dead Bug Burnout',area:['Abs','Deep core'],hold:40,sides:false,dyn:true,fin:true,fig:'dead_bug',
+  how:['Lower back pressed down.','Opposite arm and leg out and back, steady.'],cue:'Exhale every time the limbs go out.'},
+fn_curtsy:{n:'Curtsy Lunge Pulses',area:['Glutes','Outer hips'],hold:40,sides:true,dyn:true,fin:true,fig:'curtsy_lunge',
+  how:['Step into a curtsy lunge and stay low.','Pulse up and down a few inches.'],cue:'Feel the outside of the front glute.'},
+fn_fly:{n:'Floor Fly Burnout',area:['Chest','Arms'],hold:40,sides:false,dyn:true,fin:true,fig:'floor_fly',
+  how:['Light dumbbells, open and close the arms nonstop.','Soft elbows, squeeze at the top.'],cue:'Big hug, every rep.'},
+fn_rest:{n:'Rest',area:['Breathe'],hold:20,sides:false,dyn:false,fin:true,rest:true,
+  how:['Shake it out. Get a sip of water.','Next round starts on the beep.'],cue:'Breathe deep. You are doing great.'},
 dy_neck:{n:'Neck Half-Circles',area:['Neck'],hold:30,sides:false,dyn:true,
   how:['Stand tall, shoulders relaxed.','Tip one ear toward the shoulder, roll the chin slowly down and across, up to the other ear.','Half circles only, front side. About 5 each way.'],
   cue:'Slow and smooth. Never roll the head backward.'},
@@ -4623,9 +4718,18 @@ const COOL_DAY = {
   lowB:['st_hipflexor','st_quad','st_forward','st_hamstring','st_kneechest','st_child'],
   upB: ['st_neck','st_cross','st_tricep','st_lat','st_chestopen','st_child']
 };
+const FIN_ROUNDS = (n, moves) => { const out=[]; for(let i=0;i<n;i++) for(const m of moves){ out.push(m,'fn_rest'); } out.pop(); return out; };
+const FINISHERS = {
+  forge:{ lowA:FIN_ROUNDS(3,['fn_squatpulse','fn_revlunge']), upA:FIN_ROUNDS(3,['fn_pushup','fn_press']),
+          lowB:FIN_ROUNDS(3,['fn_bridgepulse','fn_revlunge']), upB:FIN_ROUNDS(3,['fn_row','fn_curl']) },
+  forger:{ lowA:FIN_ROUNDS(3,['fn_squatpulse','fn_bridgepulse']), upA:FIN_ROUNDS(3,['fn_fly','fn_deadbug']),
+           lowB:FIN_ROUNDS(3,['fn_curtsy','fn_bridgepulse']), upB:FIN_ROUNDS(3,['fn_row','fn_plank']) }
+};
+function finisherFor(dayKey){ return ((FINISHERS[P.id]||FINISHERS.forge)[dayKey]||[]).filter(id=>STRETCHDB[id]); }
+function finisherMoves(ids){ return [...new Set((ids||[]).filter(id=>id!=='fn_rest'))]; }
 function warmupFor(dayKey){ return (WARM_DAY[dayKey]||[]).filter(id=>STRETCHDB[id]); }
 /* a static stretch used inside a warm-up is a short hold, not a full one */
-function holdFor(id, kind){ const st=STRETCHDB[id]; if(!st) return 0; return (kind==='warm' && !st.dyn) ? Math.min(st.hold, 15) : st.hold; }
+function holdFor(id, kind){ const st=STRETCHDB[id]; if(!st) return 0; return (kind==='warm' && !st.dyn && !st.fin) ? Math.min(st.hold, 15) : st.hold; }
 function holdTxt(id, kind){ const h=holdFor(id,kind); return h>=120 ? Math.round(h/60)+' min' : h+' s'; }
 
 function stretchesFor(exId){ return (STRETCH_MAP[exId]||[]).filter(id=>STRETCHDB[id]); }
@@ -4668,7 +4772,8 @@ function stretchSay(){
   const side = st.sides ? (ST.side? ' Second side.':' First side.') : '';
   const hh = holdFor(ST.list[ST.i], ST.kind), len = hh>=120 ? Math.round(hh/60)+' minutes' : hh+' seconds';
   const own = !ST.side && VOICE.urls['st:'+ST.list[ST.i]];
-  const talk = ST.side ? 'Switch sides. Same thing, '+len+'. '+st.cue
+  const talk = st.rest ? 'Rest. '+len+'. '+st.cue+' '+(ST.list[ST.i+1] && STRETCHDB[ST.list[ST.i+1]] ? 'Next up, '+STRETCHDB[ST.list[ST.i+1]].n+'.' : '')
+             : ST.side ? 'Switch sides. Same thing, '+len+'. '+st.cue
              : st.n+'. '+(st.how&&st.how[0]||'')+' '+(st.how&&st.how[1]||'')+' '+st.cue+' '+(st.dyn ? 'Keep it moving for '+len+'.' : 'Hold it for '+len+(st.sides?' each side':'')+', and breathe slow.');
   say(st.n+' · '+len+(side?' ·'+side:'')+' — '+st.cue, true, own ? 'st:'+ST.list[ST.i] : (ST.side ? 'switch' : (st.dyn ? 'next' : 'hold')), talk);
 }
@@ -4743,7 +4848,7 @@ function weekStreak(){
   const add = d => { if(!d) return; const m = monOf(d); per[m] = (per[m]||0)+1; };
   for(const w of (S.workouts||[])) add(w.date);
   for(const r of (S.runs||[])) add(r.date);
-  for(const x of (S.stretches||[])) if(x.kind!=='session') add(x.date);
+  for(const x of (S.stretches||[])) if(x.kind==='reset' || x.kind==='run') add(x.date);
   let wk = monOf(todayS()), n = 0;
   if((per[wk]||0) < 3) wk = fmtD(new Date(parseD(wk).getTime()-7*86400000));
   while((per[wk]||0) >= 3){ n++; wk = fmtD(new Date(parseD(wk).getTime()-7*86400000)); }
@@ -4960,7 +5065,8 @@ function showBubble(txt){
   let b = document.getElementById('coachbubble');
   if(!b){ b=document.createElement('div'); b.id='coachbubble'; document.body.appendChild(b); }
   b.innerHTML = '<span class="cbi">'+(Object.keys(VOICE.urls).length?'🎙':'♪')+'</span><span>'+esc(txt)+'</span>';
-  b.classList.add('show'); clearTimeout(VOICE.bt); VOICE.bt = setTimeout(()=>b.classList.remove('show'), 4200);
+  b.classList.add('show'); clearTimeout(VOICE.bt);
+  VOICE.bt = setTimeout(()=>b.classList.remove('show'), (coachCfg().speak===false || !SPEECH.ok) ? 9000 : 4800);
 }
 function playClip(k){
   if(VOICE.urls[k]){ playURL(VOICE.urls[k]); return true; }
@@ -4984,6 +5090,25 @@ function shutUp(){ VOICE.queue=[]; VOICE.nextAt=0; for(const sN of VOICE.srcs){ 
 function countIn(n){ if(n>=1 && n<=3) speakText(NUMW[n]+'.'); }
 function speechOK(){ return SPEECH.ok; }
 
+/* ---------- on-screen coach card (for sound off) ---------- */
+function coachCard(ex, first){
+  if(S.settings.coachCards===false) return;
+  const E = EXDB[ex.exerciseId]; if(!E) return;
+  ex.cardShown = true; save();
+  const L = loadOf(ex.exerciseId), side = ex.side ? ' each side' : '';
+  const work = L==='time' ? ex.targetSets+' rounds · hold '+ex.lo+'–'+ex.hi+' s'+side : ex.targetSets+' sets × '+ex.lo+'–'+ex.hi+side;
+  openSheet('<div class="klabel acc">'+(first?'First up':'How to do it')+'</div>'+
+    '<div class="disp h2 mt6">'+esc(E.n)+'</div>'+
+    '<div class="row mt6" style="gap:6px;flex-wrap:wrap"><span class="chip accc">'+esc(work)+'</span><span class="chip">Rest '+ex.rest+' s</span><span class="chip">3 s down</span><span class="chip">Last set to failure</span></div>'+
+    '<div class="figwrap mt10">'+figSVG(ex.exerciseId,{})+'</div>'+
+    '<div class="coachtxt mt10"><p><b>Set up:</b> '+esc(E.setup)+'</p>'+
+      '<ol class="helpsteps">'+(E.steps||[]).slice(0,4).map(t=>'<li>'+esc(t)+'</li>').join('')+'</ol>'+
+      (E.cues&&E.cues[0] ? '<p class="mt6"><b>Key cue:</b> '+esc(E.cues[0])+'</p>' : '')+
+      (E.breath ? '<p class="mt6"><b>Breathe:</b> '+esc(E.breath)+'</p>' : '')+'</div>'+
+    '<button class="btn primary mt14" data-a="sheet-close">Got it</button>'+
+    '<button class="btn ghost mt10" data-a="cc-full" data-id="'+ex.exerciseId+'">Full guide</button>');
+}
+
 /* ---------- talking her through the workout ---------- */
 const PRAISE = {forge:['Good set.','Strong.','That\u2019s work.','Clean reps.','Solid.'],
                 forger:['Beautiful.','So strong.','Look at you go.','That\u2019s it.','Gorgeous form.']};
@@ -4993,8 +5118,9 @@ function exIntro(ex, first){
   if(VOICE.urls['ex:'+ex.exerciseId]){ shutUp(); playClip('ex:'+ex.exerciseId); showBubble((first?'First up · ':'Next up · ')+E.n); return; }
   const L = loadOf(ex.exerciseId), side = ex.side ? ' each side' : '';
   const work = L==='time' ? ex.targetSets+' rounds, hold '+ex.lo+' to '+ex.hi+' seconds'+side : ex.targetSets+' sets of '+ex.lo+' to '+ex.hi+side;
-  const talk = (first?'First up, ':'Next up, ')+E.n+'. '+firstSentence(E.setup)+' '+(E.cues&&E.cues[0]||'')+' '+(E.breath?firstSentence(E.breath)+' ':'')+work+'. Let\u2019s go.';
+  const talk = (first?'First up, ':'Next up, ')+E.n+'. '+firstSentence(E.setup)+' '+(E.cues&&E.cues[0]||'')+' '+(E.breath?firstSentence(E.breath)+' ':'')+work+'. Three seconds down on every rep, and take the last set to failure. Let\u2019s go.';
   say((first?'First up · ':'Next up · ')+E.n+' · '+work, false, null, talk);
+  if(first || !ex.cardShown) coachCard(ex, true);
 }
 function afterSet(ex, idx){
   const left = ex.targetSets - workingSets(ex).length;
@@ -5009,7 +5135,7 @@ function restOver(){
   const E = EXDB[ex.exerciseId], n = workingSets(ex).length+1, last = n>=ex.targetSets;
   const cue = E.cues && E.cues.length ? E.cues[(n-1) % E.cues.length] : '';
   say((last?'Last set':'Set '+n+' of '+ex.targetSets)+' · '+E.n, false, null,
-      'Rest is up. '+(last ? 'Last set of '+E.n+'. Make it your best one. ' : 'Set '+n+' of '+ex.targetSets+'. ')+cue);
+      'Rest is up. '+(last ? 'Last set of '+E.n+'. As many clean reps as you can. Do not stop early. ' : 'Set '+n+' of '+ex.targetSets+'. ')+cue);
 }
 
 /* ---------- recording ---------- */
@@ -5079,6 +5205,8 @@ function rVoice(){
       (SPEECH.ok ? '' : '<div class="fine mt10">This browser has no voices available.</div>')+
       (best ? '<div class="fine mt10">Using <b style="color:var(--text)">'+esc(best.name)+'</b>'+(premium?' · natural voice ✓':'')+'</div>' : '')+
       '<div class="row mt10" style="gap:8px;flex-wrap:wrap"><button class="btn small" data-a="sp-try">▶ Hear the coach</button></div>'+
+      '<div class="between mt14"><span class="steplab">Coach cards on screen</span><button class="chip '+(S.settings.coachCards!==false?'goodc':'dimc')+'" data-a="cc-toggle">'+(S.settings.coachCards!==false?'On ✓':'Off')+'</button></div>'+
+      '<div class="fine mt6">Pops up the how-to for each exercise the first time you log it, so it works with the sound off.</div>'+
       '<div class="steplab mt14">Speed</div><div class="seg mt6">'+[['slow','Slower'],['normal','Normal'],['fast','Faster']].map(([v,l])=>'<button class="'+((c.rate||'normal')===v?'on':'')+'" data-a="sp-rate" data-v="'+v+'">'+l+'</button>').join('')+'</div>'+
     '</div>'+
     (!premium ? '<div class="card"><span class="klabel">Make it sound like a real person (iPhone, one time)</span><ol class="helpsteps">'+
@@ -5108,6 +5236,7 @@ document.addEventListener('click', function(e){
   else if(a==='sp-rate'){ coachCfg().rate=b.dataset.v; save(); render(true); shutUp(); speakText('Like this. Nice and steady.'); }
   else if(a==='sp-pick'){ coachCfg().voiceName=b.dataset.k; save(); loadVoices(); render(true); shutUp(); speakText('Hi. I\u2019ll be your coach today.'); }
   else if(a==='v-more'){ UI.vMore=!UI.vMore; render(true); }
+  else if(a==='cc-toggle'){ S.settings.coachCards = S.settings.coachCards===false; save(); render(true); }
   else if(a==='v-rec'){ unlockAudio(); recStart(k); }
   else if(a==='v-play'){ shutUp(); playClip(k); }
   else if(a==='v-del'){ vdel(k).then(vloadAll).then(()=>render(true)); }
@@ -5132,7 +5261,7 @@ function buildActive(dayKey){
     };
   });
   return {id:uid(), date:todayS(), dayKey, startedAt:Date.now(), notes:'', warmupDone:false, exercises:ex,
-          warm:warmupFor(dayKey), cool:cooldownFor(dayKey), warmDone:{}, coolDone:{}};
+          warm:warmupFor(dayKey), cool:cooldownFor(dayKey), warmDone:{}, coolDone:{}, fin:finisherFor(dayKey), finDone:false};
 }
 /* one stretch as a card inside the workout */
 function stretchRow(a, id, part){
@@ -5162,7 +5291,8 @@ function sessionPhase(a){
   const wd = w.every(id=>(a.warmDone||{})[id]);
   const liftDone = a.exercises.length && a.exercises.every(e=>e.complete || workingSets(e).length>=e.targetSets);
   const cd = c.every(id=>(a.coolDone||{})[id]);
-  if(!wd) return 0; if(!liftDone) return 1; if(!cd) return 2; return 3;
+  const fd = !(a.fin && a.fin.length) || a.finDone;
+  if(!wd) return 0; if(!liftDone) return 1; if(!fd) return 2; if(!cd) return 3; return 4;
 }
 function startDay(key){
   const go = ()=>{ S.active = buildActive(key); save(); nav('player'); unlockAudio();
@@ -5252,6 +5382,7 @@ function exCard(ex, i){
     '<div class="editor">'+
       '<div class="edtop">'+
         '<span class="chip">'+(editing?'Edit set':'Set '+nextN)+'</span>'+
+        (!editing && nextN===ex.targetSets ? '<span class="chip accc">Last set · go to failure</span>' : '')+
         (g && !editing ? '<span class="chip dimc num">last '+esc(setShort(ex.exerciseId,g))+'</span>':'')+
         '<button class="chip'+(warm?' warnc':'')+'" data-a="pl-warm" data-i="'+i+'">Warm-up'+(warm?' ✓':'')+'</button>'+
         '<select class="rpesel num" id="rpe-'+i+'" data-draft="rpe" data-i="'+i+'">'+rpeOpts+'</select>'+
@@ -5278,10 +5409,22 @@ function exCard(ex, i){
     '</div></div>';
 }
 
+function finisherSection(a){
+  const ids = a.fin||[]; if(!ids.length) return '';
+  const moves = finisherMoves(ids), mins = Math.round(ids.reduce((x,id)=>x+holdFor(id,'fin')*(STRETCHDB[id].sides?2:1),0)/60);
+  const done = !!a.finDone;
+  return '<div class="card'+(done?' goodc':' acc')+'" id="sec-fin"><div class="between"><span class="klabel'+(done?' good-t':' acc')+'">3 · Finisher</span>'+
+      '<span class="chip '+(done?'goodc':'dimc')+'">'+(done?'Done ✓':mins+' min')+'</span></div>'+
+    '<div class="fine mt6">3 rounds, 40 seconds on, 20 off. Nonstop. This is the part that makes you sweat.</div>'+
+    moves.map(id=>'<div class="strow stx"><span class="stth">'+figSVG(id,{mode:'still',end:1})+'</span><span class="stm"><b>'+esc(STRETCHDB[id].n)+'</b><span>40 s'+(STRETCHDB[id].sides?' each side':'')+' · '+esc(STRETCHDB[id].area.join(', '))+'</span></span></div>').join('')+
+    (done ? '' : '<button class="btn primary mt10" data-a="pl-fin">▶ Start the finisher</button>')+
+    '<button class="chip dimc mt10" data-a="pl-fin-skip">'+(done?'Undo':'Skip today')+'</button>'+
+  '</div>';
+}
 function phaseBar(a){
   const ph = sessionPhase(a);
   const step = (i,l) => '<span class="phs'+(ph>i?' done':ph===i?' now':'')+'"><i>'+(ph>i?'✓':i+1)+'</i>'+l+'</span>';
-  return '<div class="phasebar2">'+step(0,'Warm-up')+step(1,P.id==='forger'?'Workout':'Lift')+step(2,'Cool-down')+'</div>';
+  return '<div class="phasebar2">'+step(0,'Warm')+step(1,P.id==='forger'?'Work':'Lift')+step(2,'Burn')+step(3,'Cool')+'</div>';
 }
 function rPlayer(){
   const a = S.active;
@@ -5297,8 +5440,9 @@ function rPlayer(){
   stretchSection(a,'warm','1','Warm-up','Movement prep. Keep moving for each count — nothing is held yet. Tap ▶ for a guided timer, or ✓ if you already did it.')+
   '<div class="klabel" style="margin:14px 4px 6px">2 · '+(P.id==='forger'?'Workout':'Lift')+'</div>'+
   cards+
-  '<div class="fine" style="margin:2px 4px 12px">Stop every set 1–2 reps before failure. All sets at the top of the range with clean form → progress next time.</div>'+
-  stretchSection(a,'cool','3','Cool-down','Static holds while the muscles are warm. 30 s a side, slow breathing, no bouncing.')+
+  '<div class="fine" style="margin:2px 4px 12px">Three seconds down on every rep. Short rests. Last set of each exercise: as many clean reps as you can. Hit the top of the range on every set and the weight goes up next time.</div>'+
+  finisherSection(a)+
+  stretchSection(a,'cool','4','Cool-down','Static holds while the muscles are warm. 30 s a side, slow breathing, no bouncing.')+
   '<button class="btn primary" data-a="pl-finish">Finish workout</button>'+
   '<button class="btn ghost danger mt10" data-a="pl-discard" style="border:0">Discard workout</button>'+
   '<div style="height:16px"></div>';
@@ -5484,6 +5628,7 @@ document.addEventListener('click', function(e){
       if(ex.justDone){ delete ex.justDone; const nx=S.active.exercises.find(e=>!e.complete); RT.exIdx=null;
         if(nx) exIntro(nx, false); else say('Lifting done · time to cool down', false, 'done', 'That\u2019s all the lifting. Great work today. Now let\u2019s cool down and stretch it out.'); }
       else if(!warm) afterSet(ex, +D.i);
+      if(!warm && !ex.cardShown && workingSets(ex).length===1) coachCard(ex, false);
       break; }
     case 'pl-st-done': {
       const a=S.active; if(!a) break;
@@ -5496,6 +5641,13 @@ document.addEventListener('click', function(e){
       ST.onDone = ids => { const k=part+'Done'; a[k]=a[k]||{}; for(const x of ids) a[k][x]=true; save(); };
       stretchStart([id], part==='warm'?'Warm-up':'Cool-down', 'player', part);
       break; }
+    case 'cc-full': closeSheet(); UI.exId=D.id; UI.exBack='player'; nav('exercise'); break;
+    case 'pl-fin': {
+      const a=S.active; if(!a || !(a.fin||[]).length) break;
+      ST.onDone = done => { if(done.length >= a.fin.length-1) a.finDone=true; save(); };
+      stretchStart(a.fin.slice(), 'Finisher', 'player', 'fin');
+      break; }
+    case 'pl-fin-skip': { const a=S.active; if(!a) break; a.finDone=!a.finDone; save(); render(true); break; }
     case 'pl-st-all': {
       const a=S.active; if(!a) break;
       const part=D.part, ids=(a[part]||[]).filter(id=>!(a[part+'Done']||{})[id]);
@@ -5680,6 +5832,7 @@ function bootProfile(id){
   S = load();
   if(!S){ S = defaults(); ensureWeek(todayS()); save(); }
   migrateKeys();
+  if(!S.intensityV){ if(S.settings.restCompound===120) S.settings.restCompound=90; if(S.settings.restIso===90) S.settings.restIso=60; S.intensityV=1; save(); }
   S.profileId = P.id;
   if(!S.settings.coach) S.settings.coach = {on:true, every:'mile', targetPace:0, style:'coach', lines:[]};
   if(!S.settings.coach.lines) S.settings.coach.lines = [];
