@@ -4418,6 +4418,22 @@ function rPhaseBar(r){
 /* ============ STRETCH ============ */
 .wordmark{display:block;background:none;border:0;padding:0;margin-bottom:2px;color:var(--dim);cursor:pointer;font:inherit;letter-spacing:inherit;text-transform:inherit;font-size:inherit;text-align:left}
 .phasebar2{display:flex;gap:6px;margin:0 0 12px}
+.stready{text-align:center;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);font-weight:800;margin-top:12px}
+.stclock.prep{color:var(--dim)}
+.guide .figwrap{border-radius:16px}
+.donebanner{background:color-mix(in srgb, var(--good) 16%, var(--panel));border:1px solid var(--good);color:var(--text);border-radius:14px;padding:10px 14px;margin-bottom:10px;font-weight:700;font-size:14px}
+.upnext{display:flex;align-items:center;gap:10px;width:100%;text-align:left;color:var(--text)}
+.upnext b{flex:1;font-size:15px}
+.planlist{display:flex;flex-direction:column}
+.planstep{display:flex;gap:10px;align-items:center;padding:9px 2px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--text);text-align:left;width:100%}
+.planstep:last-child{border-bottom:0}
+.planstep i{width:24px;height:24px;flex:0 0 auto;border-radius:50%;background:var(--panel2);display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:900;color:var(--dim)}
+.planstep.done i{background:var(--good);color:#06130c}
+.planstep.now i{background:var(--accent);color:var(--accent-ink)}
+.planstep.done .ps-t{opacity:.6}
+.planstep .ps-t{display:flex;flex-direction:column}
+.planstep .ps-t b{font-size:14px}
+.planstep .ps-t span{font-size:11.5px;color:var(--dim)}
 .coachtxt p{margin:0;font-size:14px;line-height:1.5}
 .coachtxt .helpsteps li{font-size:13.5px}
 [data-prof="forger"] body{background:radial-gradient(1100px 520px at 90% -12%, rgba(255,107,143,.17), transparent 60%),
@@ -4757,10 +4773,28 @@ function stretchChips(exId){
 
 /* ---------- the player ---------- */
 const ST = {list:[], i:0, side:0, left:0, run:false, timer:null, back:'home', label:'Cool-down', kind:'cooldown', onDone:null};
+/* seconds to get into position before the clock starts */
+function prepFor(i, side){
+  const st = STRETCHDB[ST.list[i]]; if(!st || st.rest) return 0;
+  if(side===1) return 5;
+  const prev = STRETCHDB[ST.list[i-1]];
+  if(prev && prev.rest) return 0;
+  return st.fin ? 5 : 8;
+}
+function stretchBegin(){
+  const pr = prepFor(ST.i, ST.side);
+  ST.prep = pr>0; ST.left = pr>0 ? pr : holdFor(ST.list[ST.i], ST.kind);
+}
+function stretchGo(){
+  if(!ST.prep) return;
+  ST.prep = false; ST.left = holdFor(ST.list[ST.i], ST.kind);
+  try{ beep(); }catch(e){}
+  render(true);
+}
 function stretchStart(ids, label, back, kind){
   ST.list = ids.filter(id=>STRETCHDB[id]); if(!ST.list.length) return;
   ST.i=0; ST.side=0; ST.run=true; ST.back=back||UI.view; ST.label=label||'Cool-down'; ST.kind=kind||'cooldown';
-  ST.left = holdFor(ST.list[0], ST.kind);
+  stretchBegin();
   unlockAudio();
   nav('stretch');
   stretchSay();
@@ -4783,6 +4817,7 @@ function stretchTick(reset){
   ST.timer = setInterval(()=>{
     if(!ST.run) return;
     ST.left -= 1;
+    if(ST.prep){ const el=$('#st-clock'); if(el) el.textContent=Math.max(0,ST.left); if(ST.left<=0) stretchGo(); return; }
     const el=$('#st-clock'); if(el){ el.textContent=ST.left; el.classList.toggle('warn', ST.left<=5); }
 
     if(ST.left<=0) stretchAdvance();
@@ -4791,12 +4826,12 @@ function stretchTick(reset){
 function stretchAdvance(){
   const st = stretchCur();
   try{ beep(); }catch(e){}
-  if(st.sides && ST.side===0){ ST.side=1; ST.left=holdFor(ST.list[ST.i], ST.kind); }
+  if(st.sides && ST.side===0){ ST.side=1; }
   else {
     ST.i += 1; ST.side=0;
     if(ST.i >= ST.list.length){ stretchFinish(); return; }
-    ST.left = holdFor(ST.list[ST.i], ST.kind);
   }
+  stretchBegin();
   render(); stretchSay();
 }
 function stretchFinish(){
@@ -4829,17 +4864,18 @@ function rStretch(){
       '<button class="btn small ghost" data-a="st-skip">Skip ›</button></div>'+
     '<div class="stprog">'+prog+'</div>'+
     '<div class="stfig">'+figSVG(ST.list[ST.i],{})+'</div>'+
-    '<div class="stclock'+(ST.left<=5?' warn':'')+'" id="st-clock">'+ST.left+'</div>'+
-    '<div class="stside">'+(st.sides? (ST.side? '<b>Second side</b>':'<b>First side</b>')+' · '+holdTxt(ST.list[ST.i],ST.kind)+' each' : (st.dyn? 'keep moving · ':'')+holdTxt(ST.list[ST.i],ST.kind)+(st.dyn?'':' hold'))+'</div>'+
+    (ST.prep ? '<div class="stready">Get into position</div>' : '')+
+    '<div class="stclock'+(ST.prep?' prep':(ST.left<=5?' warn':''))+'" id="st-clock">'+ST.left+'</div>'+
+    (ST.prep ? '<div class="stside"><b>Starting in a moment</b> · then '+holdTxt(ST.list[ST.i],ST.kind)+(st.dyn?' moving':' hold')+(st.sides?(ST.side?' · second side':' · first side'):'')+'</div>' : '<div class="stside">'+(st.sides? (ST.side? '<b>Second side</b>':'<b>First side</b>')+' · '+holdTxt(ST.list[ST.i],ST.kind)+' each' : (st.dyn? 'keep moving · ':'')+holdTxt(ST.list[ST.i],ST.kind)+(st.dyn?'':' hold'))+'</div>')+
     '<div class="disp h2 mt14" style="text-align:center">'+esc(st.n)+'</div>'+
     '<div class="mmmini">'+muscleMapSVG({primary:musRegions(st.area.slice(0,1)), secondary:musRegions(st.area.slice(1))})+'</div>'+
     '<div class="stchips" style="justify-content:center">'+st.area.map(a=>'<span class="chip dimc">'+esc(a)+'</span>').join('')+'</div>'+
     '<div class="card mt12"><ol style="margin:0;padding-left:18px">'+st.how.map(h=>'<li>'+esc(h)+'</li>').join('')+'</ol>'+
       '<div class="fine mt10"><b>Cue:</b> '+esc(st.cue)+'</div></div>'+
     '<div class="stctl">'+
-      '<button class="btn" data-a="st-add">+15 s</button>'+
+      (ST.prep ? '<button class="btn" data-a="st-more">+10 s</button>' : '<button class="btn" data-a="st-add">+15 s</button>')+
       '<button class="btn '+(ST.run?'':'primary')+'" data-a="st-pause">'+(ST.run?'Pause':'Resume')+'</button>'+
-      '<button class="btn" data-a="st-next">Next</button>'+
+      (ST.prep ? '<button class="btn primary" data-a="st-go">Start now</button>' : '<button class="btn" data-a="st-next">Next</button>')+
     '</div><div style="height:16px"></div></div>';
 }
 /* weeks in a row with at least 3 sessions (lifts, runs, stretch sessions) */
@@ -4933,7 +4969,9 @@ document.addEventListener('click', function(e){
     case 'stretch-run':  stretchStart(RUN_COOLDOWN, 'Runner\u2019s cool-down', UI.view, 'run'); break;
     case 'stretch-day':  { const k=b.dataset.k; stretchStart(cooldownFor(k), 'Cool-down', UI.view, 'cooldown'); break; }
     case 'st-stop':      stretchStop(); break;
-    case 'st-skip': case 'st-next': if(ST.list.length){ ST.left=0; stretchAdvance(); } break;
+    case 'st-skip': case 'st-next': if(ST.list.length){ ST.left=0; ST.prep=false; stretchAdvance(); } break;
+    case 'st-go':        stretchGo(); break;
+    case 'st-more':      ST.left+=10; render(true); break;
     case 'st-add':       ST.left+=15; render(true); break;
     case 'st-pause':     ST.run=!ST.run; if(ST.run) stretchTick(true); render(true); break;
   }
@@ -5243,7 +5281,7 @@ document.addEventListener('click', function(e){
   else if(a==='v-export'){ voiceExport(); }
   else if(a==='v-import'){ const f=$('#voicefile'); if(f){ f.value=''; f.click(); } }
 });
-Object.assign(window,{VOICE,CUES,say,playClip,moveCues,allCues,SPEECH,loadVoices,voiceScore,speakText,exIntro,afterSet,restOver});
+Object.assign(window,{VOICE,CUES,say,playClip,moveCues,allCues,SPEECH,loadVoices,voiceScore,speakText,exIntro,afterSet,restOver,stretchStart,stretchGo});
 document.addEventListener('change', function(e){ if(e.target && e.target.id==='voicefile' && e.target.files && e.target.files[0]) voiceImport(e.target.files[0]); });
 
 </script>
@@ -5426,11 +5464,83 @@ function phaseBar(a){
   const step = (i,l) => '<span class="phs'+(ph>i?' done':ph===i?' now':'')+'"><i>'+(ph>i?'✓':i+1)+'</i>'+l+'</span>';
   return '<div class="phasebar2">'+step(0,'Warm')+step(1,P.id==='forger'?'Work':'Lift')+step(2,'Burn')+step(3,'Cool')+'</div>';
 }
+function focusIdx(a){
+  const ok = i => a.exercises[i] && !a.exercises[i].complete;
+  if(UI.focusIdx!=null && ok(UI.focusIdx)) return UI.focusIdx;
+  return a.exercises.findIndex(e=>!e.complete);
+}
+function planList(a, cur){
+  const ph = sessionPhase(a);
+  const row = (state, title, sub, act) => '<button class="planstep '+state+'"'+(act||'')+'><i>'+(state==='done'?'✓':state==='now'?'●':'')+'</i>'+
+    '<span class="ps-t"><b>'+title+'</b><span>'+sub+'</span></span></button>';
+  const wd=(a.warm||[]).filter(id=>(a.warmDone||{})[id]).length, cd=(a.cool||[]).filter(id=>(a.coolDone||{})[id]).length;
+  let h = row(ph>0?'done':'now','Warm-up',wd+' of '+(a.warm||[]).length+' moves');
+  a.exercises.forEach((e,i)=>{ const st = e.complete?'done':(ph===1&&i===cur?'now':'');
+    h += row(st, esc(EXDB[e.exerciseId].n), workingSets(e).length+' of '+e.targetSets+' sets', ' data-a="pl-focus" data-i="'+i+'"'); });
+  if((a.fin||[]).length) h += row(a.finDone?'done':(ph===2?'now':''),'Finisher','6 min nonstop');
+  h += row(ph>3?'done':(ph===3?'now':''),'Cool-down',cd+' of '+(a.cool||[]).length+' stretches');
+  return '<div class="card"><div class="between"><span class="klabel">Today&#8217;s plan</span><button class="chip dimc" data-a="pl-full">Show everything</button></div>'+
+    '<div class="planlist mt6">'+h+'</div></div>';
+}
+function guideStep(a){
+  const ph = sessionPhase(a), steps = (a.fin||[]).length ? 4 : 3, sn = n => 'Step '+n+' of '+steps;
+  if(ph===0){ const w=a.warm||[];
+    return '<div class="card acc guide"><div class="klabel acc">'+sn(1)+' · Warm-up</div>'+
+      '<div class="disp h1 mt6">Warm up first</div><div class="sub mt6">'+w.length+' moves · '+stretchMinutes(w,'warm')+' min. Loosens you up so the lifts feel better.</div>'+
+      '<div class="stchips mt10">'+w.map(id=>'<span class="chip">'+esc(STRETCHDB[id].n)+'</span>').join('')+'</div>'+
+      '<button class="btn primary mt14" data-a="pl-st-all" data-part="warm">▶ Start the warm-up</button>'+
+      '<button class="btn ghost mt10" data-a="pl-warm-skip">I already warmed up</button></div>';
+  }
+  if(ph===1){
+    const i = focusIdx(a), ex = a.exercises[i], E = EXDB[ex.exerciseId], done = workingSets(ex).length;
+    const nx = a.exercises.find((e,j)=>j!==i && !e.complete), L = loadOf(ex.exerciseId), side = ex.side?' each side':'';
+    const work = L==='time' ? ex.targetSets+' rounds · '+ex.lo+'–'+ex.hi+' s'+side : ex.targetSets+' × '+ex.lo+'–'+ex.hi+side;
+    const prevDone = a.justFinished && EXDB[a.justFinished] ? '<div class="donebanner">✓ '+esc(EXDB[a.justFinished].n)+' done. On to the next one.</div>' : '';
+    return prevDone+
+      '<div class="card acc guide"><div class="between"><span class="klabel acc">'+sn(2)+' · Exercise '+(i+1)+' of '+a.exercises.length+'</span>'+
+        '<span class="chip accc num">Set '+Math.min(done+1, ex.targetSets)+' of '+ex.targetSets+'</span></div>'+
+      '<div class="disp h1 mt6">'+esc(E.n)+'</div>'+
+      '<div class="fine mt6">'+esc(work)+' · rest '+ex.rest+' s · 3 s down · last set to failure</div>'+
+      '<div class="figwrap mt10">'+figSVG(ex.exerciseId,{})+'</div>'+
+      (E.cues&&E.cues[0] ? '<div class="fine mt10"><b style="color:var(--text)">Key cue:</b> '+esc(E.cues[(done)%E.cues.length])+'</div>' : '')+
+      '<div class="fine mt6">'+(done ? 'Log the set when you finish it. The rest timer starts on its own.' : 'Do your first set, then log it below.')+'</div>'+
+      '</div>'+
+      exCard(ex, i)+
+      (nx ? '<button class="card upnext" data-a="pl-focus" data-i="'+a.exercises.indexOf(nx)+'"><span class="klabel">Up next</span><b>'+esc(EXDB[nx.exerciseId].n)+'</b><span class="lr-chev">›</span></button>'
+          : '<div class="card upnext"><span class="klabel">Up next</span><b>'+((a.fin||[]).length?'Finisher':'Cool-down')+'</b></div>');
+  }
+  if(ph===2){ const m=finisherMoves(a.fin);
+    return '<div class="card acc guide"><div class="klabel acc">'+sn(3)+' · Finisher</div>'+
+      '<div class="disp h1 mt6">Burn it out</div><div class="sub mt6">3 rounds · 40 seconds on, 20 off · about 6 minutes nonstop.</div>'+
+      m.map(id=>'<div class="strow stx"><span class="stth">'+figSVG(id,{mode:'still',end:1})+'</span><span class="stm"><b>'+esc(STRETCHDB[id].n)+'</b><span>'+esc(STRETCHDB[id].cue)+'</span></span></div>').join('')+
+      '<button class="btn primary mt14" data-a="pl-fin">▶ Start the finisher</button>'+
+      '<button class="btn ghost mt10" data-a="pl-fin-skip">Skip today</button></div>';
+  }
+  if(ph===3){ const c=a.cool||[];
+    return '<div class="card acc guide"><div class="klabel acc">'+sn(steps)+' · Cool-down</div>'+
+      '<div class="disp h1 mt6">Stretch it out</div><div class="sub mt6">'+c.length+' stretches · '+stretchMinutes(c)+' min. Each one gives you time to get into position first.</div>'+
+      '<div class="stchips mt10">'+c.map(id=>'<span class="chip">'+esc(STRETCHDB[id].n)+'</span>').join('')+'</div>'+
+      '<button class="btn primary mt14" data-a="pl-st-all" data-part="cool">▶ Start the cool-down</button>'+
+      '<button class="btn ghost mt10" data-a="pl-cool-skip">Skip the stretch</button></div>';
+  }
+  return '<div class="card goodc guide"><div class="klabel good-t">All done</div><div class="disp h1 mt6">Great work</div>'+
+    '<div class="sub mt6">Every part of today is finished. Save it to lock in your progress.</div>'+
+    '<button class="btn primary mt14" data-a="pl-finish">Save workout</button></div>';
+}
 function rPlayer(){
   const a = S.active;
   if(!a) return '<div class="emptystate card"><div class="disp big">No workout running</div><div class="sub mt6">Start one from Home or the Program tab.</div><button class="btn primary mt14" data-a="nav" data-v="home">Home</button></div>';
+  if(!UI.fullList){
+    return '<div class="plhead">'+
+        '<button class="btn small ghost" data-a="nav" data-v="home">‹</button>'+
+        '<div class="plmid"><span class="klabel">'+esc(DAY_META[a.dayKey].name)+'</span><span class="plclock num" id="pl-clock">'+fmtClock(Date.now()-a.startedAt)+'</span></div>'+
+        '<button class="btn small primary" data-a="pl-finish">Finish</button>'+
+      '</div>'+
+      phaseBar(a)+guideStep(a)+planList(a, focusIdx(a))+
+      '<button class="btn ghost danger mt10" data-a="pl-discard" style="border:0">Discard workout</button><div style="height:16px"></div>';
+  }
   const cards = a.exercises.map(exCard).join('');
-  return ''+
+  return '<button class="chip mb10" data-a="pl-full">← Back to guided view</button>'+
   '<div class="plhead">'+
     '<button class="btn small ghost" data-a="nav" data-v="home">‹</button>'+
     '<div class="plmid"><span class="klabel">'+esc(DAY_META[a.dayKey].name)+'</span><span class="plclock num" id="pl-clock">'+fmtClock(Date.now()-a.startedAt)+'</span></div>'+
@@ -5625,7 +5735,8 @@ document.addEventListener('click', function(e){
       ex.draft={weight:entry.weight, reps:entry.reps, rpe:'', warm:false, band:entry.band};
       save(); render(true);
       startRest(ex.rest, EXDB[ex.exerciseId].n);
-      if(ex.justDone){ delete ex.justDone; const nx=S.active.exercises.find(e=>!e.complete); RT.exIdx=null;
+      if(!ex.justDone) S.active.justFinished=null;
+      if(ex.justDone){ delete ex.justDone; S.active.justFinished=ex.exerciseId; UI.focusIdx=null; save(); render(); const nx=S.active.exercises.find(e=>!e.complete); RT.exIdx=null;
         if(nx) exIntro(nx, false); else say('Lifting done · time to cool down', false, 'done', 'That\u2019s all the lifting. Great work today. Now let\u2019s cool down and stretch it out.'); }
       else if(!warm) afterSet(ex, +D.i);
       if(!warm && !ex.cardShown && workingSets(ex).length===1) coachCard(ex, false);
@@ -5642,6 +5753,11 @@ document.addEventListener('click', function(e){
       stretchStart([id], part==='warm'?'Warm-up':'Cool-down', 'player', part);
       break; }
     case 'cc-full': closeSheet(); UI.exId=D.id; UI.exBack='player'; nav('exercise'); break;
+    case 'pl-focus':  UI.focusIdx=+D.i; if(S.active) S.active.justFinished=null; render(); break;
+    case 'pl-full':   UI.fullList=!UI.fullList; render(); break;
+    case 'pl-warm-skip': { const a=S.active; if(!a) break; a.warmDone=a.warmDone||{}; for(const id of (a.warm||[])) a.warmDone[id]=true; save(); render();
+      const nx=a.exercises.find(e=>!e.complete); if(nx) exIntro(nx,true); break; }
+    case 'pl-cool-skip': { const a=S.active; if(!a) break; a.coolDone=a.coolDone||{}; for(const id of (a.cool||[])) a.coolDone[id]=true; save(); render(); break; }
     case 'pl-fin': {
       const a=S.active; if(!a || !(a.fin||[]).length) break;
       ST.onDone = done => { if(done.length >= a.fin.length-1) a.finDone=true; save(); };
