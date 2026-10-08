@@ -2249,7 +2249,7 @@ function rSettings(){
   (P.id==='forger' ? '<div class="card"><div class="between"><span class="klabel">Breastfeeding</span>'+
     '<button class="chip'+(pf.breastfeeding?' goodc':' dimc')+'" data-a="bf-toggle">'+(pf.breastfeeding?'Yes — targets raised':'No')+'</button></div>'+
     '<div class="fine mt10">While feeding, the app adds about 400 kcal and 15 g protein to every day and bumps water to 3.5 L. Do not run a deficit while breastfeeding — supply and recovery come first.</div></div>' : '')+
-  '<div class="card"><div class="between"><span class="klabel">Coach voice</span><span class="chip dimc">'+(coachCfg().speak!==false?'On':'Off')+'</span></div>'+
+  '<div class="card"><div class="between"><span class="klabel">Coach voice</span><span class="chip dimc">'+(VPACKS[vpack()]?VPACKS[vpack()].name:vpack()==='phone'?'Phone':'Off')+'</span></div>'+
     '<div class="fine mt10">A spoken coach talks you through each workout, stretch and run.</div>'+
     '<button class="btn mt10" data-a="nav" data-v="voice">Coach voice settings</button></div>'+
   '<div class="card"><span class="klabel">Training partner</span>'+
@@ -4349,9 +4349,9 @@ function coachTick(){
       const nx = r.phases[r.phaseIdx];
       if(nx){
         const verb = nx.t==='hard' ? 'Pick it up. ' : nx.t==='easy' ? 'Ease off. ' : '';
-        say(verb + nx.l + ' · ' + fmtDur(nx.sec), false, nx.t==='hard'?'pickup':nx.t==='easy'?'easeoff':'next', verb + nx.l + ' for ' + spokenTime(nx.sec) + '.');
+        say(verb + nx.l + ' · ' + fmtDur(nx.sec), false, nx.t==='hard'?'pickup':nx.t==='easy'?'easeoff':'next', [VSEG.phase(nx)]);
         if(nx.t==='hard' && !VOICE.urls.pickup){ const hard=r.phases.map((q,i)=>[q,i]).filter(([q])=>q.t==='hard'), idx=hard.findIndex(([q,i])=>i===r.phaseIdx);
-          if(idx===hard.length-1 && hard.length>1) speakText('Last one. Empty the tank.'); else if(idx>=0) speakText('Round '+(idx+1)+'.'); }
+          if(idx===hard.length-1 && hard.length>1) speakSegs(['Last one. Empty the tank.'], true); else if(idx>=0 && idx<10) speakSegs(['Round '+nword(idx+1)+'.'], true); }
       }else{
         say('Workout complete. Finish when you are ready.', false, 'done');
         r.plan=null; r.phases=null;
@@ -4370,12 +4370,16 @@ function coachTick(){
     const lastSplit = sp.length? sp[sp.length-1].sec : sec;
     const avg = sec/(m/MI);
     if(c.style==='brief'){
-      say(dist+(dist===1?' mile':' miles')+' · '+pace(sec,m)+' /mi avg', false, unit===0.5 && dist%1 ? 'halfmile' : 'mile');
+      say(dist+(dist===1?' mile':' miles')+' · '+pace(sec,m)+' /mi avg', false, unit===0.5 && dist%1 ? 'halfmile' : 'mile', [VSEG.mile(dist), 'Average'].concat(timeWords(avg), ['per mile.']));
     }else{
       let line = dist+(dist===1?' mile':' miles')+'. Last split '+spokenTime(lastSplit)+'. Average '+spokenPace(avg)+'.';
       line += targetDeltaLine(avg);
-      if(done>=1){ const own=coachOwnLine(); if(own) line += ' '+own; else if(!r.cue.mid && done>=2){ r.cue.mid=true; line += ' '+pick(P.mids); } }
-      say(line, false, unit===0.5 && dist%1 ? 'halfmile' : 'mile');
+      if(done>=1){ const own=coachOwnLine(); if(own) line += ' '+own; else if(!r.cue.mid && done>=2){ r.cue.mid=true; r.cue.midLine=pick(P.mids); line += ' '+r.cue.midLine; } }
+      const tpv = coachCfg().targetPace, ddv = tpv ? Math.round(avg-tpv) : null;
+      const segs = [VSEG.mile(dist), 'Last split'].concat(timeWords(lastSplit), ['Average'], timeWords(avg), ['per mile.'],
+        ddv==null ? [] : [Math.abs(ddv)<4 ? 'Right on target pace.' : ddv<0 ? 'Ahead of your target pace.' : 'Behind your target pace.'],
+        r.cue.mid && line.indexOf(r.cue.midLine||'@@')>=0 ? [r.cue.midLine] : []);
+      say(line, false, unit===0.5 && dist%1 ? 'halfmile' : 'mile', segs);
       const tp=coachCfg().targetPace; if(tp){ const dd=Math.round(avg-tp); playClip(Math.abs(dd)<4?'ontarget':dd<0?'ahead':'behind'); }
 
     }
@@ -4388,7 +4392,7 @@ function coachTick(){
     if(mins > r.cue.min && sec>60){
       r.cue.min = mins;
       const avg = m>50 ? sec/(m/MI) : 0;
-      say(fmtDur(mins*300)+' · '+fmtMi(m)+' mi'+(avg? ' · '+pace(sec,m)+' /mi avg':''), false, 'time');
+      say(fmtDur(mins*300)+' · '+fmtMi(m)+' mi'+(avg? ' · '+pace(sec,m)+' /mi avg':''), false, 'time', [VSEG.minutes(mins*5)]);
       save();
     }
   }
@@ -4396,18 +4400,20 @@ function coachTick(){
 function coachStartLine(){
   const c = coachCfg();
   const r = S.runActive;
-  if(P.id==='forger' && !runReadyOK() && r && !r.plan) say('Run-ready check isn\u2019t finished. Keep it easy, stop at any symptom.', true, 'careful');
+  if(P.id==='forger' && !runReadyOK() && r && !r.plan) say(VSEG.careful, true, 'careful');
   if(!c.on || c.style==='off') return;
   if(r && r.phases && r.phases.length){
     const first = r.phases[0];
-    say(planById(r.plan).name+' · first up: '+first.l+' · '+fmtDur(first.sec), false, 'go');
+    say(planById(r.plan).name+' · first up: '+first.l+' · '+fmtDur(first.sec), false, 'go', VSEG.planStart(r.plan));
   }else if(c.style==='brief'){ say('Started.', false, 'go'); }
   else { say(coachOwnLine() || pick(P.openers), false, 'open'); }
 }
 function coachFinishLine(sec, meters){
   const c=coachCfg();
   if(!c.on || c.style==='off') return;
-  say(pick(P.finishers)+' '+fmtMi(meters)+' mi · '+fmtDur(sec)+' · '+pace(sec,meters)+' /mi', false, 'done');
+  const fin = pick(P.finishers);
+  say(fin+' '+fmtMi(meters)+' mi · '+fmtDur(sec)+' · '+pace(sec,meters)+' /mi', false, 'done',
+      [fin].concat(distWords(meters), ['miles.','Average'], timeWords(sec/(meters/MI)), ['per mile.']));
 }
 
 const D_ = b => b.dataset.id;
@@ -4903,9 +4909,11 @@ function stretchSay(){
   const side = st.sides ? (ST.side? ' Second side.':' First side.') : '';
   const hh = holdFor(ST.list[ST.i], ST.kind), len = hh>=120 ? Math.round(hh/60)+' minutes' : hh+' seconds';
   const own = !ST.side && VOICE.urls['st:'+ST.list[ST.i]];
-  const talk = st.rest ? 'Rest. '+len+'. '+st.cue+' '+(ST.list[ST.i+1] && STRETCHDB[ST.list[ST.i+1]] ? 'Next up, '+STRETCHDB[ST.list[ST.i+1]].n+'.' : '')
-             : ST.side ? 'Switch sides. Same thing, '+len+'. '+st.cue
-             : st.n+'. '+(st.how&&st.how[0]||'')+' '+(st.how&&st.how[1]||'')+' '+st.cue+' '+(st.dyn ? 'Keep it moving for '+len+'.' : 'Hold it for '+len+(st.sides?' each side':'')+', and breathe slow.');
+  const nxt = STRETCHDB[ST.list[ST.i+1]];
+  const talk = st.rest ? ['Rest. Twenty seconds.', st.cue, nxt && nxt.fin ? 'Next up, '+nxt.n+'.' : null]
+             : ST.side ? ['Switch sides.', st.cue]
+             : [VSEG.stBody(ST.list[ST.i]), st.cue, VSEG.holdTail(ST.list[ST.i], ST.kind)];
+  void len;
   say(st.n+' · '+len+(side?' ·'+side:'')+' — '+st.cue, true, own ? 'st:'+ST.list[ST.i] : (ST.side ? 'switch' : (st.dyn ? 'next' : 'hold')), talk);
 }
 function stretchTick(reset){
@@ -5166,8 +5174,8 @@ function vdb(){
   return new Promise((res, rej) => {
     if(VOICE.db) return res(VOICE.db);
     if(!window.indexedDB) return rej('no idb');
-    const r = indexedDB.open('forge_voice', 1);
-    r.onupgradeneeded = () => r.result.createObjectStore('clips');
+    const r = indexedDB.open('forge_voice', 2);
+    r.onupgradeneeded = () => { const db=r.result; if(!db.objectStoreNames.contains('clips')) db.createObjectStore('clips'); if(!db.objectStoreNames.contains('vcache')) db.createObjectStore('vcache'); };
     r.onsuccess = () => { VOICE.db = r.result; res(VOICE.db); };
     r.onerror = () => rej(r.error);
   });
@@ -5217,17 +5225,125 @@ function say(txt, force, key, spoken){
   const busy = SPEECH.ok && (speechSynthesis.speaking || speechSynthesis.pending);
   shutUp();
   if(key && playClip(key)) return;
-  if(busy){ VOICE.st = setTimeout(()=>{ if(!speakText(spoken||txt)) chime(); }, 140); return; }
-  if(!speakText(spoken||txt)) chime();
+  const segs = spoken || txt;
+  if(vpack()==='phone' && busy){ VOICE.st = setTimeout(()=>{ if(!speakSegs(segs)) chime(); }, 140); return; }
+  if(!speakSegs(segs)) chime();
 }
 function motivate(){
   const lines = CUES.filter(q=>q.g==='Motivation'), q = pick(lines);
   if(VOICE.urls[q.k]) return playClip(q.k);
-  return speakText(q.line);
+  return speakSegs([q.line], true);
 }
-function shutUp(){ clearTimeout(VOICE.st); VOICE.queue=[]; VOICE.nextAt=0; for(const sN of VOICE.srcs){ try{ sN.stop(); }catch(e){} } VOICE.srcs=[]; try{ if(SPEECH.ok) speechSynthesis.cancel(); }catch(e){} }
-function countIn(n){ if(n>=1 && n<=3) speakText(NUMW[n]+'.'); }
+function shutUp(){ clearTimeout(VOICE.st); VOICE.seq=(VOICE.seq||0)+1; VOICE.pend=null; VOICE.queue=[]; VOICE.nextAt=0; for(const sN of VOICE.srcs){ try{ sN.stop(); }catch(e){} } VOICE.srcs=[]; try{ if(SPEECH.ok) speechSynthesis.cancel(); }catch(e){} }
+function countIn(n){ if(n>=1 && n<=3) speakSegs([NUMW[n]+'.'], true); }
 function speechOK(){ return SPEECH.ok; }
+
+/* ---------- pre-made coach voice ----------
+   Every spoken line is built from pieces with fixed wording. Each piece is an
+   audio file made ahead of time in each voice (open-source Kokoro voices,
+   Apache 2.0), stored next to the app and kept on the phone after first use. */
+const VPACKS = {bella:{name:'Voice 2', desc:'Woman, bright'}, fenrir:{name:'Voice 5', desc:'Man, deep'}};
+const VMAN = new Set(/*VMAN*/["00500da8","005567fd","009dc086","019a6e8c","01a53a61","0309c912","037caabf","0461ae9b","04abf0de","04f891ab","050f4154","05182cbe","052cb7e1","05760adf","058be3b5","05dd11dd","065ad7e5","06cf445b","07cbd892","07cc2b2a","0833cf43","08e30642","092b07ee","0996c4ad","0a05bafc","0af9e09c","0ba64c7d","0bd4f5b5","0ce65c3a","0d6ea810","0de95da8","0defe2be","0e2c0ddc","1174fac4","122df3f6","124d80a1","129857b9","1338ac14","13547bbf","13d2f3a7","1422e226","143e361d","144f5d2c","145124c3","14540b75","146079bd","14d592d3","150ab8e9","15170ee4","1538e192","1546ef2f","160baa84","16266f55","175eb228","1769b956","176ecc61","18ae6c91","19581649","19d1cb03","1a5030ec","1a956a35","1b3ad663","1dbdff54","1df8065c","1e094865","1f379611","1f7a288e","1f92889d","1f96bba7","20308dfc","20518fd3","20d81732","212d7a69","2178ea48","22e8722f","23533c73","23617417","23c9d786","24c87b02","24e27328","262c64eb","26825c9e","26a8c9ac","26b65851","270d3d1e","276c507e","288ee9bb","2ab6c5c2","2ab8ca4b","2b4919b8","2ce93813","2db3e23c","2e732984","2f19016a","2f69f5a5","2f70b9e7","2f85671a","2fa1af1c","2fa5f5a6","2ff6e56d","318a02c1","3229d489","32670a34","32c47d2a","32f83c89","331729c5","336f1d35","34a05160","34c15228","34d2067e","3583acfe","35ef9c42","36679d36","3688ad13","373c4386","37488dbb","3772de34","37f5501d","384bc765","38c77bcb","38ee34df","39abf78e","3a37b04f","3a47f3e8","3a9ce2f2","3b81dd05","3c66a2c5","3e082f09","401efd28","4030332b","4041c7cc","4066483b","407c5edf","41475742","41a3814e","443bc547","445c9b82","4504a5da","4568db80","45e06940","46dfcffa","47174632","474b232a","484698c3","48838613","49c62b29","4a2f2dc6","4af9eccf","4b4c0d73","4dc4e584","4e2eef3d","4f9747f9","529cdc9c","5341604e","53f0a72a","54131cb4","541b1163","541ec73e","5436d9b2","54574c3e","54880518","54a946a1","54d00049","551dd984","55598f5d","56f46d4a","578439e9","589c4007","58bd1f6c","58bf6750","58dcd132","58f7fe53","59e5c031","5a4416fe","5a73fa57","5a822305","5aeeeb6a","5b7a7a33","5d5231f4","5dd9b967","5de91794","5f2565d7","5fbf898f","6071188e","60909aef","60c16249","6182a3c3","6220ea2c","63374a36","633aea91","641b68c4","64e9c7cc","66198c19","665a697e","6779abf7","677e5dc6","67d2935d","686b1eb4","699963e2","69fa4fc6","6ad2d0f8","6b26340b","6bea33de","6c1e42ba","6c375e90","6cb0a928","6cd94cb4","6cf077df","6d6aa138","6dc2feb4","6e81f40a","6eb45520","6ee4cae9","6f619219","6fd63958","705b90d1","7070fc71","70dde21a","70f53f76","71c86a0e","72e6c0d7","72f52107","7312c45f","7316b74c","7320ab2d","73702072","7370b08c","748c4898","749863b1","74b024a4","74b51bd3","751870e0","75327fd1","7649ac87","766c95bf","77af659f","78034164","78bcb11b","78e5e49e","79960376","79b4b9f0","7a1d03ea","7a9a2d1c","7ac5fcb5","7ad776b6","7b5b650a","7bce6f39","7bdadfe9","7be0d41c","7c35205c","7cf4340e","7d0bf564","7d9e15b6","7e11707a","7e1bf3ff","7eeb927b","7ef13fef","7ef25c84","7f491a9b","7f5fbd69","7f7bf48f","80e6dab8","816b600c","82b197fc","834e8363","83d0f306","83e3263b","83f78792","841095fa","8501cc34","852b5af2","8546f653","8583378f","868d4b77","8842ec8d","888603c3","88de44ac","89047346","891d7587","897b2596","898e2869","8a08a218","8a6d3d5b","8a8377c6","8ab709fc","8b1ac0f5","8b6fe763","8c280a9f","8d605fa8","8e3b4992","8e704251","8eb30b77","8ef6edf1","8ff53680","900b9397","90796b33","90d4580c","915fb5be","926d87ce","936a4e5d","93766ae4","941f96c3","9475020a","947d3a6e","953e87cd","957f7809","959b4cc4","95ccdaae","95e76b9b","96c80461","96fdba5a","9749b7d2","975294a6","97ac128a","986d0b65","98b4aa68","990a7285","9918990c","9a8b3947","9ac663d0","9b220646","9b23d9a2","9b46be0b","9b619b76","9c30394a","9c9811af","9cb20e09","9dedec05","9e6f62b4","9e72b7bb","9ee9bb54","9f7a4d21","a11e2ff0","a197d0b8","a1bcbddf","a1f4cb10","a271eef1","a285da8b","a3a5e30b","a3de99fc","a45feb3c","a4c3854c","a4c6ff66","a4e5d45a","a4fe858e","a5558a16","a562e939","a57e9c10","a65446e8","a6a95822","a709afc2","a79f671e","a7f5316f","a8048cb5","a844dd53","a878b13f","a9023a92","a9dd01ef","a9e4d314","aa60e5cc","aae237b0","ab2f81f7","ac36b26f","ac5c30ed","ace73f85","ad5585ca","ade90ec9","ae05aea6","ae1ca82f","aeb44395","af7094f1","af827a56","afcca2ab","b06cc97f","b0db7cf5","b0f67276","b165dbe8","b1b69e25","b1c1568e","b292f559","b3034089","b3107a76","b359a600","b3d672f4","b4320250","b44eb4b1","b4a4d25f","b60e95b4","b61a7709","b63dcfb6","b6c1ccab","b8e07ecf","b9207438","ba0502d9","ba2719ef","ba39b80f","bac9c57e","bad134d6","bb729b55","bba0fe0b","bbb0d507","bbf6738c","bc49f512","bcab5610","bd01f454","bd7fed9b","bd93ede1","be248829","be561fea","bec22206","bec31193","bedbb2a2","bf5eea0d","bf71f437","bfad1fdd","c0018fb6","c0094c6c","c10de0ba","c2c894c1","c302386a","c302eee6","c4e78851","c5a55415","c5d13fab","c61eaf8c","c6b2b8d3","c6bc6bf8","c7349b49","c7821c12","c86da424","c8ceae3e","c97bdc20","c9ebd26e","ca3007ab","caa25e14","caba9a2a","cae42d22","cb1dc766","cb4a1d7f","cb4a4651","cc0dcf5c","cc8d8ad3","cce36acb","cdffc1c5","ceeac39a","cef8746e","cf4e2d16","cf74ecee","d0c7b537","d24c5a75","d28409f4","d289ad17","d28b687f","d28bd037","d2bade61","d2ddbf4f","d33ab3fa","d356aa09","d3bc3ab5","d43fbef0","d4a4f94b","d4fa8470","d6154aa5","d62687de","d64816e9","d66c8c20","d7de98cf","d7f82e17","d91bf3f4","d9cba173","da16db62","da6236b8","dac14296","dae84477","dbfce4b3","dd58a949","ddd78196","decd49fc","df62c661","dfebb5c5","e0b43629","e2096658","e21ee631","e25e2853","e281652e","e2a854b5","e32e2d0b","e4432de8","e51a1c98","e5428965","e569ba56","e5baefef","e651a100","e684d899","e69d95ff","e6fdc818","e7563668","e778ccaf","e798474a","e82b2ed2","e8bc4689","e8f21c59","e96d5d20","ea3dff68","eac8a67d","ead7b92c","eb42b6cd","eba3512d","ebde4eb3","ec0c9a3b","ed74e703","edd6ba00","ee067ee1","efe7e6de","f076295b","f134a5b6","f1cb59cb","f252dd1a","f28d11d2","f2901c45","f2b07eba","f2b0825a","f2fa345e","f3c19e3d","f3c68186","f3f289c1","f438b863","f4d39360","f4f19c1c","f513c57d","f5352bb4","f58b27ce","f61732bb","f620d94c","f639c540","f640cd8f","f8375cb2","f87dad6c","f892d481","f8cfc3b5","f9e04498","fb1595db","fbaee936","fc211d7a","fc21f037","fc33113e","fc8be4de","fca1b837","fd20dcb2","fe637742","ffec4874"]);
+const ONES_W = ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+const TENS_W = ['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+function nword(n){ n=Math.round(n); if(n<0) n=0; if(n<20) return ONES_W[n]; if(n<100) return TENS_W[Math.floor(n/10)]+(n%10?' '+ONES_W[n%10]:''); return String(n); }
+const capw = t => t.charAt(0).toUpperCase()+t.slice(1);
+function durWords(sec){ sec=Math.round(sec); const m=Math.floor(sec/60), x=sec%60;
+  if(!m) return nword(x)+' seconds'; return nword(m)+(m===1?' minute':' minutes')+(x? ' '+nword(x)+' seconds':''); }
+function timeWords(sec){ sec=Math.round(sec); const m=Math.floor(sec/60), x=sec%60; return [nword(m), x===0 ? 'flat' : x<10 ? 'oh '+ONES_W[x] : nword(x)]; }
+function distWords(meters){ const mi=Math.round(meters/MI*10)/10, w=Math.floor(mi), d=Math.round((mi-w)*10); return d ? [nword(w),'point',ONES_W[d]] : [nword(w)]; }
+function vnorm(t){ return String(t).replace(/[\u2019\u2018]/g,"'").replace(/[\u201c\u201d]/g,'"').replace(/\s+/g,' ').trim().toLowerCase(); }
+function vhash(t){ let h=0x811c9dc5; const x=vnorm(t); for(let i=0;i<x.length;i++){ h^=x.charCodeAt(i); h=Math.imul(h,0x01000193)>>>0; } return ('0000000'+h.toString(16)).slice(-8); }
+const VSEG = {
+  tail: 'Three seconds down on every rep, and take the last set to failure. Let\u2019s go.',
+  last: 'Last set. As many clean reps as you can. Do not stop early.',
+  careful: 'Run-ready check isn\u2019t finished. Keep it easy, stop at any symptom.',
+  dayIntro(k){ const nm = DAY_META[k].name.replace(' · ',', ').replace('&',' and ');
+    const f = PROGRAM[k] && PROGRAM[k].focus ? 'We\u2019re working '+PROGRAM[k].focus.split(' + ')[0].replace(/\s*—\s*/g,', ')+'.' : null;
+    return ['Alright. Today is '+nm+'.', f, 'We start with the warm-up. Tap play on the first move when you\u2019re ready.'].filter(Boolean); },
+  exBody(id){ const E=EXDB[id]; return (E.n+'. '+firstSentence(E.setup)+' '+(E.cues&&E.cues[0]||'')+' '+(E.breath?firstSentence(E.breath):'')).replace(/\s+/g,' ').trim(); },
+  work(sets, lo, hi, side, time){ const r = lo===hi ? nword(lo) : nword(lo)+' to '+nword(hi);
+    return time ? capw(nword(sets))+' rounds. Hold '+r+' seconds'+(side?' each side':'')+'.' : capw(nword(sets))+' sets of '+r+(side?' each side':'')+'.'; },
+  workFor(ex){ return VSEG.work(ex.targetSets, ex.lo, ex.hi, ex.side, loadOf(ex.exerciseId)==='time'); },
+  rest(n){ return 'Rest '+durWords(n)+'.'; },
+  setOf(n, m){ return 'Set '+nword(n)+' of '+nword(m)+'.'; },
+  exCue(E, n){ const c=E.cues||[]; return c.length>2 ? c[1 + ((Math.max(2,n)-2) % 2)] : (c[1]||c[0]||''); },
+  stBody(id){ const st=STRETCHDB[id]; return (st.n+'. '+(st.how&&st.how[0]||'')+' '+(st.how&&st.how[1]||'')).replace(/\s+/g,' ').trim(); },
+  holdTail(id, kind){ const st=STRETCHDB[id], h=holdFor(id, kind);
+    return st.dyn ? 'Keep it moving for '+durWords(h)+'.' : 'Hold it for '+durWords(h)+(st.sides?' each side':'')+', and breathe slow.'; },
+  phase(nx){ const v = nx.t==='hard' ? 'Pick it up. ' : nx.t==='easy' ? 'Ease off. ' : nx.t==='cool' ? 'Cool down. ' : '';
+    return v+capw(nx.l)+' for '+durWords(nx.sec)+'.'; },
+  planStart(id){ const pl=planById(id), ph=planPhases(id)||[]; return [pl.name+'.', ph[0] ? 'First up, '+ph[0].l.toLowerCase()+', '+durWords(ph[0].sec)+'.' : null].filter(Boolean); },
+  mile(d){ const w=Math.floor(d); return d%1 ? (w ? 'Mile '+nword(w)+' and a half.' : 'Half a mile.') : 'Mile '+nword(w)+'.'; },
+  minutes(n){ return capw(nword(n))+' minutes.'; }
+};
+/* every piece the coach can say in this program (the voice files are made from this list) */
+function voiceCatalog(){
+  const out = new Set(), add = x => { if(x) out.add(String(x)); }, all = a => (a||[]).forEach(add);
+  for(const k of P.liftOrder) all(VSEG.dayIntro(k));
+  for(const id in EXDB){ add(VSEG.exBody(id)); for(let n=2;n<=5;n++) add(VSEG.exCue(EXDB[id], n)); }
+  for(const k in P.program) for(const sl of P.program[k].slots) add(VSEG.work(sl.sets, sl.lo, sl.hi, sl.side, LOAD[sl.id]==='time'));
+  all(['First up,','Next up,',VSEG.tail,VSEG.last,'One more set to go.','Rest is up.','That\u2019s all the lifting. Great work.','Finisher next.',
+       'Now let\u2019s cool down and stretch it out.','Done. Nice work.','Switch sides.','Rest. Twenty seconds.','Go.']);
+  for(const r of [30,45,60,75,90,105,120,150,180]) add(VSEG.rest(r));
+  for(let m=2;m<=6;m++) for(let n=1;n<=m;n++) add(VSEG.setOf(n,m));
+  all(PRAISE[P.id]);
+  for(const id in STRETCHDB){ const st=STRETCHDB[id]; if(st.rest) { add(st.cue); continue; }
+    add(VSEG.stBody(id)); add(st.cue); for(const kd of ['warm','cool','fin']) add(VSEG.holdTail(id, kd));
+    if(st.fin) add('Next up, '+st.n+'.'); }
+  for(const pl of RUNPLANS){ if(pl.only && pl.only!==P.id) continue; all(VSEG.planStart(pl.id)); for(const ph of (planPhases(pl.id)||[])) add(VSEG.phase(ph)); }
+  for(let k=1;k<=10;k++) add('Round '+nword(k)+'.');
+  all(['Ten seconds.','Three.','Two.','One.','Last one. Empty the tank.','Workout complete. Finish when you are ready.','Started.','Paused.','Back on.',
+       'Coach set.',VSEG.careful,'Last split','Average','per mile.','miles.','point','flat','Ahead of your target pace.','Behind your target pace.','Right on target pace.']);
+  for(let d=0.5; d<=30; d+=0.5) add(VSEG.mile(d));
+  for(let n=0;n<60;n++) add(nword(n)); for(let x=1;x<10;x++) add('oh '+ONES_W[x]);
+  for(let m=5;m<=95;m+=5) add(VSEG.minutes(m));
+  all(P.openers); all(P.mids); all(P.finishers);
+  CUES.filter(q=>q.g==='Motivation').forEach(q=>add(q.line));
+  all(['Hi. I\u2019ll be your coach today.','Like this. Nice and steady.']);
+  return [...out];
+}
+function vpack(){ const c=coachCfg(); if(c.speak===false) return 'off'; return c.voice || (P.id==='forger'?'bella':'fenrir'); }
+/* clips play strictly in order, one after another */
+function vcacheGet(url){ return vdb().then(db=>new Promise(res=>{ try{ const r=db.transaction('vcache','readonly').objectStore('vcache').get(url); r.onsuccess=()=>res(r.result||null); r.onerror=()=>res(null); }catch(e){ res(null); } })).catch(()=>null); }
+function vcachePut(url, buf){ return vdb().then(db=>new Promise(res=>{ try{ const t=db.transaction('vcache','readwrite'); t.objectStore('vcache').put(buf, url); t.oncomplete=()=>res(); t.onerror=()=>res(); }catch(e){ res(); } })).catch(()=>{}); }
+async function vfetch(url){
+  let ab = await vcacheGet(url);
+  if(!ab){ const r = await fetch(url); if(!r.ok) throw new Error('missing'); ab = await r.arrayBuffer(); vcachePut(url, ab.slice(0)); }
+  return ab;
+}
+VOICE.seq = 0;
+async function playSeq(urls){
+  const my = ++VOICE.seq; unlockAudio();
+  for(const url of urls){
+    if(my !== VOICE.seq) return;
+    try{
+      let b = VOICE.buf[url];
+      if(!b){ const ab = await vfetch(url); if(!audioCtx){ const a=new Audio(url); const pr=a.play(); if(pr&&pr.catch) pr.catch(()=>{}); continue; }
+        b = await new Promise((res,rej)=>audioCtx.decodeAudioData(ab,res,rej)); VOICE.buf[url]=b; }
+      if(my !== VOICE.seq) return;
+      const src = audioCtx.createBufferSource(); src.buffer=b; src.connect(audioCtx.destination);
+      const at = Math.max(audioCtx.currentTime+0.02, VOICE.nextAt); src.start(at); VOICE.nextAt = at + b.duration + 0.05;
+      VOICE.srcs.push(src); src.onended = () => { VOICE.srcs = VOICE.srcs.filter(x=>x!==src); };
+    }catch(e){}
+  }
+}
+function speakSegs(segs, append){
+  const list = (Array.isArray(segs) ? segs : [segs]).filter(Boolean).map(String);
+  const pack = vpack();
+  if(!list.length || pack==='off') return false;
+  if(pack==='phone') return speakText(list.join(' '));
+  const urls = list.map(x=>vhash(x)).filter(h=>VMAN.has(h)).map(h=>'voice/'+pack+'/'+h+'.mp3');
+  if(!urls.length) return false;
+  if(append){ VOICE.pend = (VOICE.pend||Promise.resolve()).then(()=>playSeq(urls)); } else { VOICE.pend = playSeq(urls); }
+  return true;
+}
+async function voiceDownload(){
+  const pack = vpack(); if(!VPACKS[pack]) return;
+  const hs=[...VMAN]; let done=0; UI.vdl={pack, n:hs.length, done:0}; render(true);
+  for(const h of hs){ try{ await vfetch('voice/'+pack+'/'+h+'.mp3'); }catch(e){} done++; if(done%20===0||done===hs.length){ UI.vdl.done=done; const el=$('#vdl-n'); if(el) el.textContent=done+' / '+hs.length; } }
+  UI.vdl=null; coachCfg()['saved_'+pack]=true; save(); render(true); toast('Voice saved on this phone');
+}
 
 /* ---------- on-screen coach card (for sound off) ---------- */
 function coachCard(ex, first){
@@ -5257,24 +5373,24 @@ function exIntro(ex, first){
   if(VOICE.urls['ex:'+ex.exerciseId]){ shutUp(); playClip('ex:'+ex.exerciseId); showBubble((first?'First up · ':'Next up · ')+E.n); return; }
   const L = loadOf(ex.exerciseId), side = ex.side ? ' each side' : '';
   const work = L==='time' ? ex.targetSets+' rounds, hold '+ex.lo+' to '+ex.hi+' seconds'+side : ex.targetSets+' sets of '+ex.lo+' to '+ex.hi+side;
-  const talk = (first?'First up, ':'Next up, ')+E.n+'. '+firstSentence(E.setup)+' '+(E.cues&&E.cues[0]||'')+' '+(E.breath?firstSentence(E.breath)+' ':'')+work+'. Three seconds down on every rep, and take the last set to failure. Let\u2019s go.';
+  const talk = [first?'First up,':'Next up,', VSEG.exBody(ex.exerciseId), VSEG.workFor(ex), VSEG.tail];
   say((first?'First up · ':'Next up · ')+E.n+' · '+work, false, null, talk);
   if(first || !ex.cardShown) coachCard(ex, true);
 }
 function afterSet(ex, idx){
   const left = ex.targetSets - workingSets(ex).length;
   if(left<=0) return;
-  const tail = left===1 ? ' One more set to go.' : '';
-  say(pick(PRAISE[P.id]||PRAISE.forge)+' Rest '+ex.rest+' s'+(left===1?' · last set next':''), false, null, pick(PRAISE[P.id]||PRAISE.forge)+' Rest '+ex.rest+' seconds.'+tail);
+  const pr = pick(PRAISE[P.id]||PRAISE.forge);
+  say(pr+' Rest '+ex.rest+' s'+(left===1?' · last set next':''), false, null, [pr, VSEG.rest(ex.rest), left===1?'One more set to go.':null]);
   RT.exIdx = idx;
 }
 function restOver(){
   const a = S.active; if(!a || RT.exIdx==null) return;
   const ex = a.exercises[RT.exIdx]; if(!ex || ex.complete) return;
   const E = EXDB[ex.exerciseId], n = workingSets(ex).length+1, last = n>=ex.targetSets;
-  const cue = E.cues && E.cues.length ? E.cues[(n-1) % E.cues.length] : '';
-  say((last?'Last set':'Set '+n+' of '+ex.targetSets)+' · '+E.n, false, null,
-      'Rest is up. '+(last ? 'Last set of '+E.n+'. As many clean reps as you can. Do not stop early. ' : 'Set '+n+' of '+ex.targetSets+'. ')+cue);
+  const cue = VSEG.exCue(E, n);
+  say((last?'Last set':'Set '+n+' of '+ex.targetSets)+' · '+E.n+(last?'':' · '+cue), false, null,
+      ['Rest is up.', last ? VSEG.last : VSEG.setOf(n, ex.targetSets), last ? null : cue]);
 }
 
 /* ---------- recording ---------- */
@@ -5332,32 +5448,28 @@ function moveCues(){
 }
 function allCues(){ return CUES.concat(moveCues()); }
 function rVoice(){
-  const c = coachCfg(), ALLC = allCues(), recs = ALLC.filter(q=>VOICE.urls[q.k]).length;
+  const c = coachCfg(), ALLC = allCues(), recs = ALLC.filter(q=>VOICE.urls[q.k]).length, pk = vpack();
   if(SPEECH.ok && !SPEECH.voices.length) loadVoices();
-  const best = SPEECH.best, list = SPEECH.voices.slice().sort((x,y)=>voiceScore(y)-voiceScore(x)).slice(0,10);
-  const premium = best && /premium|enhanced|natural|neural/i.test(best.name);
+  const opt = (v, title, sub) => '<div class="vrow'+(pk===v?' live':'')+'"><div class="vline"><b>'+title+'</b><div class="fine">'+sub+'</div></div><div class="vbtns">'+
+      (VPACKS[v] ? '<button class="chip" data-a="vp-try" data-v="'+v+'">▶</button>' : '')+
+      '<button class="chip '+(pk===v?'goodc':'')+'" data-a="vp-set" data-v="'+v+'">'+(pk===v?'✓ Using':'Use')+'</button></div></div>';
   return '<div class="row mb10"><button class="btn small ghost" data-a="nav" data-v="settings">&#8249; Settings</button></div>'+
     '<div class="pagehead"><div><div class="klabel">'+esc(P.name)+'</div><div class="disp h1">Coach voice</div></div></div>'+
-    '<div class="card acc flat"><div class="between"><span class="klabel acc">Spoken coach</span>'+
-      '<button class="chip '+(c.speak!==false?'goodc':'dimc')+'" data-a="sp-toggle">'+(c.speak!==false?'On ✓':'Off')+'</button></div>'+
-      '<div class="fine mt6" style="color:var(--text)">Talks you through every session: what the next exercise is, how to set up, the one cue that matters, your sets and reps, rest, and your splits on runs.</div>'+
-      (SPEECH.ok ? '' : '<div class="fine mt10">This browser has no voices available.</div>')+
-      (best ? '<div class="fine mt10">Using <b style="color:var(--text)">'+esc(best.name)+'</b>'+(premium?' · natural voice ✓':'')+'</div>' : '')+
-      '<div class="row mt10" style="gap:8px;flex-wrap:wrap"><button class="btn small" data-a="sp-try">▶ Hear the coach</button></div>'+
-      '<div class="between mt14"><span class="steplab">Coach cards on screen</span><button class="chip '+(S.settings.coachCards!==false?'goodc':'dimc')+'" data-a="cc-toggle">'+(S.settings.coachCards!==false?'On ✓':'Off')+'</button></div>'+
-      '<div class="fine mt6">Pops up the how-to for each exercise the first time you log it, so it works with the sound off.</div>'+
-      '<div class="steplab mt14">Speed</div><div class="seg mt6">'+[['slow','Slower'],['normal','Normal'],['fast','Faster']].map(([v,l])=>'<button class="'+((c.rate||'normal')===v?'on':'')+'" data-a="sp-rate" data-v="'+v+'">'+l+'</button>').join('')+'</div>'+
+    '<div class="card acc flat"><span class="klabel acc">Choose your coach</span>'+
+      '<div class="fine mt6" style="color:var(--text)">Talks you through every session: the next exercise, how to set up, the cue that matters, your sets and reps, rest, stretches, and your splits on runs.</div>'+
+      opt('bella', VPACKS.bella.name+' · '+VPACKS.bella.desc, 'Natural voice, made ahead of time')+
+      opt('fenrir', VPACKS.fenrir.name+' · '+VPACKS.fenrir.desc, 'Natural voice, made ahead of time')+
+      opt('phone', 'Phone voice', SPEECH.best ? 'Your phone\u2019s built-in voice ('+esc(SPEECH.best.name)+')' : 'Your phone\u2019s built-in voice')+
+      opt('off', 'Off', 'Words on screen only, with a soft chime')+
+      (VPACKS[pk] ? (UI.vdl ? '<div class="fine mt10">Saving to this phone… <span id="vdl-n" class="num">'+UI.vdl.done+' / '+UI.vdl.n+'</span></div>'
+        : '<button class="btn mt12" data-a="vp-dl">'+(c['saved_'+pk]?'✓ Saved for offline · refresh':'Save this voice for offline use')+'</button>'+
+          '<div class="fine mt6">About 5 MB. Lines also save on their own the first time they play.</div>') : '')+
     '</div>'+
-    (!premium ? '<div class="card"><span class="klabel">Make it sound like a real person (iPhone, one time)</span><ol class="helpsteps">'+
-      '<li>Open the <b>Settings</b> app, tap <b>Accessibility</b>, then <b>Spoken Content</b>, then <b>Voices</b>.</li>'+
-      '<li>Tap <b>English</b>, then a voice: <b>'+(P.id==='forger'?'Ava or Zoe':'Evan or Nathan')+'</b> sound the most natural.</li>'+
-      '<li>Tap the version that says <b>Premium</b> (or Enhanced) and let it download.</li>'+
-      '<li>Close this app fully and open it again. It picks the new voice by itself.</li></ol></div>' : '')+
-    (list.length>1 ? '<div class="card"><span class="klabel">Choose a voice</span>'+list.map(v=>
-      '<div class="vrow"><div class="vline">'+esc(v.name)+(/premium|enhanced|natural|neural/i.test(v.name)?' <span class="chip goodc">natural</span>':'')+'</div><div class="vbtns">'+
-      '<button class="chip" data-a="sp-pick" data-k="'+esc(v.name)+'">'+(best&&best.name===v.name?'✓ Using':'Use')+'</button></div></div>').join('')+'</div>' : '')+
+    '<div class="card"><div class="between"><span class="klabel">Coach cards on screen</span><button class="chip '+(S.settings.coachCards!==false?'goodc':'dimc')+'" data-a="cc-toggle">'+(S.settings.coachCards!==false?'On ✓':'Off')+'</button></div>'+
+      '<div class="fine mt6">Pops up the how-to for each exercise the first time you log it, so it works with the sound off.</div></div>'+
+    (pk==='phone' ? '<div class="card"><span class="klabel">Phone voice speed</span><div class="seg mt6">'+[['slow','Slower'],['normal','Normal'],['fast','Faster']].map(([v,l])=>'<button class="'+((c.rate||'normal')===v?'on':'')+'" data-a="sp-rate" data-v="'+v+'">'+l+'</button>').join('')+'</div></div>' : '')+
     '<div class="card"><div class="between"><span class="klabel">Your own recordings (optional)</span><button class="chip dimc" data-a="v-more">'+(UI.vMore?'Hide':'Show')+'</button></div>'+
-      '<div class="fine mt6">'+recs+' recorded. Any line someone records plays instead of the spoken coach for that line.</div>'+
+      '<div class="fine mt6">'+recs+' recorded. Any line someone records plays instead of the coach voice for that line.</div>'+
       (UI.vMore ? '<div class="grid2 mt10"><button class="btn" data-a="v-export">Send recordings</button><button class="btn" data-a="v-import">Add a recordings file</button></div>'+
         [...new Set(ALLC.map(q=>q.g))].map(g=>'<div class="steplab mt14">'+esc(g)+'</div>'+ALLC.filter(q=>q.g===g).map(q=>{
           const has=!!VOICE.urls[q.k], live=VOICE.recKey===q.k;
@@ -5370,10 +5482,14 @@ document.addEventListener('click', function(e){
   const b=e.target.closest('[data-a]'); if(!b) return;
   const a=b.dataset.a, k=b.dataset.k;
   if(a==='sp-toggle'){ coachCfg().speak = coachCfg().speak===false; save(); render(true); }
-  else if(a==='sp-try'){ unlockAudio(); shutUp(); const ex=EXDB[(slotList(P.liftOrder[0])[0]||{}).id]||EXDB.goblet_squat;
-    speakText('First up, '+ex.n+'. '+(ex.cues&&ex.cues[0]||'')+' Three sets of ten. You\u2019ve got this.'); }
-  else if(a==='sp-rate'){ coachCfg().rate=b.dataset.v; save(); render(true); shutUp(); speakText('Like this. Nice and steady.'); }
-  else if(a==='sp-pick'){ coachCfg().voiceName=b.dataset.k; save(); loadVoices(); render(true); shutUp(); speakText('Hi. I\u2019ll be your coach today.'); }
+  else if(a==='sp-try'){ unlockAudio(); shutUp(); const id=(slotList(P.liftOrder[0])[0]||{}).id||'goblet_squat';
+    speakSegs(['First up,', VSEG.exBody(id), VSEG.tail]); }
+  else if(a==='sp-rate'){ coachCfg().rate=b.dataset.v; save(); render(true); shutUp(); speakSegs(['Like this. Nice and steady.']); }
+  else if(a==='sp-pick'){ coachCfg().voiceName=b.dataset.k; coachCfg().voice='phone'; save(); loadVoices(); render(true); shutUp(); speakSegs(['Hi. I\u2019ll be your coach today.']); }
+  else if(a==='vp-set'){ unlockAudio(); coachCfg().voice=b.dataset.v; coachCfg().speak = b.dataset.v!=='off'; save(); render(true); shutUp();
+    if(b.dataset.v!=='off') speakSegs(['Hi. I\u2019ll be your coach today.']); }
+  else if(a==='vp-try'){ unlockAudio(); const was=coachCfg().voice; coachCfg().voice=b.dataset.v; shutUp(); speakSegs(['Hi. I\u2019ll be your coach today.','First up,', VSEG.exBody((slotList(P.liftOrder[0])[0]||{}).id||'goblet_squat')]); coachCfg().voice=was; }
+  else if(a==='vp-dl'){ voiceDownload(); }
   else if(a==='v-more'){ UI.vMore=!UI.vMore; render(true); }
   else if(a==='cc-toggle'){ S.settings.coachCards = S.settings.coachCards===false; save(); render(true); }
   else if(a==='v-rec'){ unlockAudio(); recStart(k); }
@@ -5382,7 +5498,7 @@ document.addEventListener('click', function(e){
   else if(a==='v-export'){ voiceExport(); }
   else if(a==='v-import'){ const f=$('#voicefile'); if(f){ f.value=''; f.click(); } }
 });
-Object.assign(window,{VOICE,CUES,say,playClip,moveCues,allCues,SPEECH,loadVoices,voiceScore,speakText,exIntro,afterSet,restOver,stretchStart,stretchGo});
+Object.assign(window,{VOICE,CUES,say,playClip,moveCues,allCues,SPEECH,loadVoices,voiceScore,speakText,exIntro,afterSet,restOver,stretchStart,stretchGo,voiceCatalog,vhash,vnorm,VSEG,VMAN,speakSegs,vpack,nword,timeWords});
 document.addEventListener('change', function(e){ if(e.target && e.target.id==='voicefile' && e.target.files && e.target.files[0]) voiceImport(e.target.files[0]); });
 
 </script>
@@ -5436,7 +5552,7 @@ function sessionPhase(a){
 function startDay(key){
   const go = ()=>{ S.active = buildActive(key); save(); nav('player'); unlockAudio();
     try{ const nm=DAY_META[key].name.replace(' · ',', ').replace('&',' and ');
-      say('Today · '+DAY_META[key].name, false, 'go', 'Alright. Today is '+nm+'. '+(PROGRAM[key]&&PROGRAM[key].focus? 'We\u2019re working '+PROGRAM[key].focus.split(' + ')[0].replace(/—/g,',')+'. ':'')+'We start with the warm-up. Tap play on the first move when you\u2019re ready.'); }catch(e){} };
+      void nm; say('Today · '+DAY_META[key].name, false, 'go', VSEG.dayIntro(key)); }catch(e){} };
   if(S.active){
     confirmSheet('Replace workout in progress?',
       'You have an unfinished '+DAY_META[S.active.dayKey].name+' session. Starting a new one discards it.',
@@ -5838,7 +5954,7 @@ document.addEventListener('click', function(e){
       startRest(ex.rest, EXDB[ex.exerciseId].n);
       if(!ex.justDone) S.active.justFinished=null;
       if(ex.justDone){ delete ex.justDone; S.active.justFinished=ex.exerciseId; UI.focusIdx=null; save(); render(); const nx=S.active.exercises.find(e=>!e.complete); RT.exIdx=null;
-        if(nx) exIntro(nx, false); else say('Lifting done · time to cool down', false, 'done', 'That\u2019s all the lifting. Great work today. Now let\u2019s cool down and stretch it out.'); }
+        if(nx) exIntro(nx, false); else say('Lifting done', false, 'done', ['That\u2019s all the lifting. Great work.', (S.active.fin||[]).length ? 'Finisher next.' : 'Now let\u2019s cool down and stretch it out.']); }
       else if(!warm) afterSet(ex, +D.i);
       if(!warm && !ex.cardShown && workingSets(ex).length===1) coachCard(ex, false);
       break; }
